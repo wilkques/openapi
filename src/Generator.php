@@ -100,12 +100,12 @@ class Generator
      */
     private function routeOnlyNamespace(string $namespace = null)
     {
-        return !empty($this->config['namespace']) &&
-            !in_array(
+        return !empty($this->config['only']['namespace']) &&
+            !Str::containsAll(
                 Str::start($namespace, "\\"),
                 array_map(
                     fn ($item) => Str::start($item, '\\'),
-                    $this->config['namespace']
+                    $this->config['only']['namespace']
                 )
             );
     }

@@ -55,10 +55,11 @@ return [
     |
     */
 
-    'namespace' => [
-        // 'App\Http\Controllers',
+    'only' => [
+        'namespace' => [
+            // 'App\Http\Controllers',
+        ],
     ],
-
 
     /*
     |--------------------------------------------------------------------------
