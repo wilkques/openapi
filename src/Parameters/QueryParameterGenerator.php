@@ -32,20 +32,31 @@ class QueryParameterGenerator implements ParameterGenerator
             $paramObj = [
                 'in' => $this->getParamLocation(),
                 'name' => $param,
-                'type' => $type,
                 'required' => $this->isParamRequired($paramRules),
                 'description' => '',
             ];
 
+            $schema = [
+                'type' => $type
+            ];
+
             if (!empty($enums)) {
-                $paramObj['enum'] = $enums;
+                $schema = [
+                    'type' => $type,
+                    'enum' => $enums
+                ];
             }
 
             if ($type === 'array') {
-                $paramObj['items'] = ['type' => 'string'];
+                $schema = [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'string'
+                    ]
+                ];
             }
 
-            $params[$param] = $paramObj;
+            $params[$param] = $paramObj + compact('schema');
         }
 
         $params = $this->addArrayTypes($params, $arrayTypes);

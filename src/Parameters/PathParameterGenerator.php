@@ -22,9 +22,11 @@ class PathParameterGenerator implements ParameterGenerator
             $parameters[] = [
                 'in' => $this->getParamLocation(),
                 'name' => strip_optional_char($variable),
-                'type' => 'string', //best guess for a variable in the path
                 'required' => $this->isPathVariableRequired($variable),
                 'description' => '',
+                'schema' => [
+                    'type' => 'string', //best guess for a variable in the path
+                ]
             ];
         }
 

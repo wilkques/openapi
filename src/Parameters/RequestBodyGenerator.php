@@ -26,7 +26,7 @@ class RequestBodyGenerator
      */
     public function init()
     {
-        if (strtolower($this->getGenerator()->getMethod()) === 'post')
+        if ($this->getGenerator() && strtolower($this->getGenerator()->getMethod()) === 'post')
             $this->setContentType('multipart/form-data');
 
         return $this;
@@ -53,11 +53,11 @@ class RequestBodyGenerator
     }
 
     /**
-     * @param Generator $generator
+     * @param Generator|null $generator
      * 
      * @return static
      */
-    public function setGenerator(Generator $generator)
+    public function setGenerator(Generator $generator = null)
     {
         $this->generator = $generator;
 
@@ -128,6 +128,12 @@ class RequestBodyGenerator
                 $type = ['type' => $this->getParamType($fieldRule)];
             }
 
+            $enum = $this->getEnumValues($fieldRule);
+
+            if (!empty($enum)) {
+                $type += compact('enum');
+            }
+
             if ($fieldCheck) {
                 $field = Str::finish($this->fieldReName($field, '.', '['), ']');
 
@@ -181,6 +187,7 @@ class RequestBodyGenerator
     protected function mime(array $fieldRule)
     {
         return Arr::where($fieldRule, function ($value) {
+            if (is_object($value)) return;
             return Str::contains(strtolower($value), ["file", "image", "mimetypes", "mimes"]);
         });
     }

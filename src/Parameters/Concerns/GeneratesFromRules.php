@@ -61,7 +61,7 @@ trait GeneratesFromRules
 
         [$param, $vals] = explode(':', $in);
 
-        return explode(',', $vals);
+        return explode(',', preg_replace('/"/i', '', $vals));
     }
 
     private function getInParameter(array $paramRules)

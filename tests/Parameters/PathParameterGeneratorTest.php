@@ -9,7 +9,7 @@ class PathParameterGeneratorTest extends TestCase
 {
     public function testRequiredParameter()
     {
-        $pathParameters = $this->getPathParameters('/users/{id}');
+        ['parameters' => $pathParameters] = $this->getPathParameters('/users/{id}');
 
         $this->assertSame('path', $pathParameters[0]['in']);
         $this->assertSame('id', $pathParameters[0]['name']);
@@ -18,14 +18,14 @@ class PathParameterGeneratorTest extends TestCase
 
     public function testOptionalParameter()
     {
-        $pathParameters = $this->getPathParameters('/users/{id?}');
+        ['parameters' => $pathParameters] = $this->getPathParameters('/users/{id?}');
 
         $this->assertSame(false, $pathParameters[0]['required']);
     }
 
     public function testMultipleParameters()
     {
-        $pathParameters = $this->getPathParameters('/users/{username}/{id?}');
+        ['parameters' => $pathParameters] = $this->getPathParameters('/users/{username}/{id?}');
 
         $this->assertSame('username', $pathParameters[0]['name']);
         $this->assertSame(true, $pathParameters[0]['required']);
