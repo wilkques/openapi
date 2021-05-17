@@ -121,10 +121,10 @@ class RequestBodyGenerator
         if (!empty($required)) {
             $required = array_filter($required);
 
-            $requestBody['content'][$this->contentType]['schema'] += compact('required');
+            $requestBody['content'][$this->getContentType()]['schema'] += compact('required');
         }
 
-        $requestBody['content'][$this->contentType]['schema'] += compact('properties');
+        $requestBody['content'][$this->getContentType()]['schema'] += compact('properties');
 
         return compact('requestBody');
     }
