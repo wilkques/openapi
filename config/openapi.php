@@ -48,7 +48,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | namespace Controllers
+    | Only
     |--------------------------------------------------------------------------
     |
     | namespace in the following array will be generate openapi in the paths array
@@ -63,7 +63,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | route except
+    | Except
     |--------------------------------------------------------------------------
     |
     | route in the following array will not generate openapi in the paths array
