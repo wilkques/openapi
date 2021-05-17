@@ -37,7 +37,7 @@ class RequestBodyGeneratorTest extends TestCase
             'email',
             'address',
             'dob',
-        ], $requestBody['content']['application/json']['schema']['required']);
+        ], $requestBody['content']['multipart/form-data']['schema']['required']);
 
         return $requestBody;
     }
@@ -55,7 +55,7 @@ class RequestBodyGeneratorTest extends TestCase
             'picture'       => ['type' => 'string', 'format' => 'binary'],
             'is_validated'  => ['type' => 'boolean'],
             'score'         => ['type' => 'number'],
-        ], $requestBody['content']['application/json']['schema']['properties']);
+        ], $requestBody['content']['multipart/form-data']['schema']['properties']);
     }
 
     public function testNoRequiredParameters()
@@ -84,129 +84,127 @@ class RequestBodyGeneratorTest extends TestCase
         $requestBody = $this->getBodyParameters([
             'matrix' => 'array',
             'matrix.*' => 'array',
-            'matrix.*.*' => 'integer',
+            'matrix.*.*' => 'array',
+            'matrix.*.*.*' => 'integer',
         ]);
 
-        // $this->assertEquals([
-        //     'matrix' => [
-        //         'type' => 'array',
-        //         'items' => [
-        //             [
-        //                 'type' => 'array',
-        //                 'items' => [
-        //                     [
-        //                         'type' => 'integer',
-        //                     ],
-        //                 ],
-        //             ],
-        //         ],
-        //     ],
-        // ], $requestBody['content']['application/json']['schema']['properties']);
-
         $this->assertEquals([
-            "matrix" => [
-                "type" => "array",
+            'matrix' => [
+                'type' => 'array',
+                'items' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'array',
+                        'items' => [
+                            'type' => 'integer',
+                        ],
+                    ],
+                ],
             ],
-            "matrix[]" => [
-                "type" => "array",
-                "items" => [
-                    "type" => "array",
-                ]
-            ],
-            "matrix[][]" => [
-                "type" => "array",
-                "items" => [
-                    "type" => "integer",
-                ]
-            ]
         ], $requestBody['content']['application/json']['schema']['properties']);
+
+        // $this->assertEquals([
+        //     "matrix" => [
+        //         "type" => "array",
+        //     ],
+        //     "matrix[]" => [
+        //         "type" => "array",
+        //         "items" => [
+        //             "type" => "array",
+        //         ]
+        //     ],
+        //     "matrix[][]" => [
+        //         "type" => "array",
+        //         "items" => [
+        //             "type" => "integer",
+        //         ]
+        //     ]
+        // ], $requestBody['content']['application/json']['schema']['properties']);
     }
 
     public function testObjectInArraySyntax()
     {
         $requestBody = $this->getBodyParameters([
-            'points' => 'array',
+            // 'points' => 'array',
             'points.*.x' => 'numeric',
             'points.*.y' => 'numeric',
         ]);
 
-        // $this->assertEquals([
-        //     'points' => [
-        //         'type' => 'array',
-        //         'items' => [
-        //             [
-        //                 'type' => 'object',
-        //                 'properties' => [
-        //                     'x' => [
-        //                         'type' => 'number',
-        //                     ],
-        //                     'y' => [
-        //                         'type' => 'number',
-        //                     ],
-        //                 ],
-        //             ],
-        //         ],
-        //     ],
-        // ], $requestBody['content']['application/json']['schema']['properties']);
-
         $this->assertEquals([
-            "points" => [
-                "type" => "array",
-            ],
-            "points[][x]" => [
-                "type" => "array",
-                "items" => [
-                    "type" => "number",
-                ],
-            ],
-            "points[][y]" => [
-                "type" => "array",
-                "items" => [
-                    "type" => "number",
+            'points' => [
+                'type' => 'array',
+                'items' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'x' => [
+                            'type' => 'number',
+                        ],
+                        'y' => [
+                            'type' => 'number',
+                        ],
+                    ],
                 ],
             ],
         ], $requestBody['content']['application/json']['schema']['properties']);
+
+        // $this->assertEquals([
+        //     "points" => [
+        //         "type" => "array",
+        //     ],
+        //     "points[][x]" => [
+        //         "type" => "array",
+        //         "items" => [
+        //             "type" => "number",
+        //         ],
+        //     ],
+        //     "points[][y]" => [
+        //         "type" => "array",
+        //         "items" => [
+        //             "type" => "number",
+        //         ],
+        //     ],
+        // ], $requestBody['content']['application/json']['schema']['properties']);
     }
 
     public function testSingleObjectSyntax()
     {
         $requestBody = $this->getBodyParameters([
-            'point' => '',
+            // 'point' => '',
             'point.x' => 'numeric',
             'point.y' => 'numeric',
         ]);
 
-        // $this->assertEquals([
-        //     'point' => [
-        //         'type' => 'object',
-        //         'properties' => [
-        //             'x' => [
-        //                 'type' => 'number',
-        //             ],
-        //             'y' => [
-        //                 'type' => 'number',
-        //             ],
-        //         ],
-        //     ],
-        // ], $requestBody['content']['application/json']['schema']['properties']);
-
         $this->assertEquals([
-            "point" => [
-                "type" => "string",
+            'point' => [
+                'type' => 'object',
+                'properties' => [
+                    'x' => [
+                        'type' => 'number',
+                    ],
+                    'y' => [
+                        'type' => 'number',
+                    ],
+                ],
             ],
-            "point[x]" => [
-                "type" => "array",
-                "items" => [
-                    "type" => "number",
-                ]
-            ],
-            "point[y]" => [
-                "type" => "array",
-                "items" => [
-                    "type" => "number",
-                ]
-            ]
         ], $requestBody['content']['application/json']['schema']['properties']);
+
+        // $this->assertEquals([
+        //     "point" => [
+        //         "type" => "string",
+        //     ],
+        //     "point[x]" => [
+        //         "type" => "array",
+        //         "items" => [
+        //             "type" => "number",
+        //         ]
+        //     ],
+        //     "point[y]" => [
+        //         "type" => "array",
+        //         "items" => [
+        //             "type" => "number",
+        //         ]
+        //     ]
+        // ], $requestBody['content']['application/json']['schema']['properties']);
     }
 
     public function testResolvesRuleEnum()
