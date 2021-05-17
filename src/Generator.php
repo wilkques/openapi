@@ -600,7 +600,7 @@ class Generator
             case 'post':
             case 'put':
             case 'patch':
-                return new Parameters\RequestBodyGenerator($rules, $this);
+                return new Parameters\RequestBodyGenerator($rules);
             default:
                 return new Parameters\QueryParameterGenerator($rules);
                 break;

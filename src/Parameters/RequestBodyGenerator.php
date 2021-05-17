@@ -13,12 +13,10 @@ class RequestBodyGenerator
     protected $rules;
     /** @var string */
     protected $contentType = 'application/json';
-    /** @var Generatoer */
-    protected $generator;
 
-    public function __construct(array $rules, Generator $generator = null)
+    public function __construct(array $rules)
     {
-        $this->setRules($rules)->setGenerator($generator)->init();
+        $this->setRules($rules)->init();
     }
 
     /**
@@ -50,26 +48,6 @@ class RequestBodyGenerator
     public function getRules()
     {
         return $this->rules;
-    }
-
-    /**
-     * @param Generator|null $generator
-     * 
-     * @return static
-     */
-    public function setGenerator(Generator $generator = null)
-    {
-        $this->generator = $generator;
-
-        return $this;
-    }
-
-    /**
-     * @return Generator
-     */
-    public function getGenerator()
-    {
-        return $this->generator;
     }
 
     /**
