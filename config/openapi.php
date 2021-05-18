@@ -25,21 +25,20 @@ return [
             'version' => '1.0.0',
         ],
 
-        'host' => config('app.url'),
-
-        'basePath' => '/api',
-
-        'schemes' => [
-            'http',
-            'https',
-        ],
-
-        'consumes' => [
-            'application/json',
-        ],
-
-        'produces' => [
-            'application/json',
+        "servers" => [
+            [
+                "url" => env('APP_DOMAIN', '') ? "{schema}://" . env('APP_DOMAIN') : '/',
+                "description" => "server",
+                "variables" => [
+                    "schema" => [
+                        "enum" => [
+                            "https",
+                            "http"
+                        ],
+                        "default" => "http"
+                    ],
+                ]
+            ],
         ],
 
     ],
@@ -154,8 +153,7 @@ return [
                     ],
                 ],
             ],
-            */
-        ],
+            */],
         'security' => [
             [
                 /*
@@ -165,8 +163,7 @@ return [
                 ],
 
                 'passport' => []
-                */
-            ],
+                */],
         ],
     ]
 ];

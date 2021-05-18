@@ -49,8 +49,7 @@ class GeneratorTest extends TestCase
         $this->assertArrayHasKey('title', $docs['info']);
         $this->assertArrayHasKey('description', $docs['info']);
         $this->assertArrayHasKey('version', $docs['info']);
-        $this->assertArrayHasKey('host', $docs);
-        $this->assertArrayHasKey('basePath', $docs);
+        $this->assertArrayHasKey('servers', $docs);
         $this->assertArrayHasKey('paths', $docs);
 
         return $docs;
@@ -66,17 +65,30 @@ class GeneratorTest extends TestCase
                     'description' => 'This is my awesome site, please enjoy it',
                     'version' => '1.0.0',
                 ],
-                'host' => config('app.url'),
-                'basePath' => '/api',
-                'schemes' => [
-                    'http',
-                    'https',
-                ],
-                'consumes' => [
-                    'application/json',
-                ],
-                'produces' => [
-                    'application/json',
+                "servers" => [
+                    [
+                        "url" => env('APP_DOMAIN', '') ? "{schema}://" . env('APP_DOMAIN') : '/',
+                        "description" => "server",
+                        "variables" => [
+                            "schema" => [
+                                "enum" => [
+                                    "http",
+                                    "https",
+                                ],
+                                "default" => "http"
+                            ],
+                            "port" => [
+                                "enum" => [
+                                    "8443",
+                                    "443"
+                                ],
+                                "default" => "443"
+                            ],
+                            "basePath" => [
+                                "default" => "v1"
+                            ]
+                        ]
+                    ],
                 ],
             ]
         ]);
@@ -85,11 +97,9 @@ class GeneratorTest extends TestCase
         $this->assertEquals(config('app.name'), $docs['info']['title']);
         $this->assertEquals('This is my awesome site, please enjoy it', $docs['info']['description']);
         $this->assertEquals('1.0.0', $docs['info']['version']);
-        $this->assertEquals(config('app.url'), $docs['host']);
-        $this->assertEquals('/api', $docs['basePath']);
-        $this->assertEquals(['http', 'https'], $docs['schemes']);
-        $this->assertEquals(['application/json'], $docs['consumes']);
-        $this->assertEquals(['application/json'], $docs['produces']);
+        $this->assertEquals(['http', 'https'], $docs['servers'][0]['variables']['schema']['enum']);
+        $this->assertEquals(['8443', '443'], $docs['servers'][0]['variables']['port']['enum']);
+        $this->assertArrayHasKey('default', $docs['servers'][0]['variables']['basePath']);
     }
 
     public function testSecurityDefinitionsAccessCodeFlow()
@@ -318,28 +328,56 @@ EOD;
     public function testOptionalData()
     {
         $docs = $this->getDocsWithNewConfig([
-            'schemes' => [
-                'http',
-                'https',
-            ],
-
-            'consumes' => [
-                'application/json',
-            ],
-
-            'produces' => [
-                'application/json',
-            ],
+            'baseic' => [
+                "servers" => [
+                    [
+                        "url" => env('APP_DOMAIN', '') ? "{schema}://" . env('APP_DOMAIN') : '/',
+                        "description" => "server",
+                        "variables" => [
+                            "schema" => [
+                                "enum" => [
+                                    "http",
+                                    "https",
+                                ],
+                                "default" => "http"
+                            ],
+                            "port" => [
+                                "enum" => [
+                                    "8443",
+                                    "443"
+                                ],
+                                "default" => "443"
+                            ],
+                            "basePath" => [
+                                "default" => "v1"
+                            ]
+                        ]
+                    ],
+                ],
+            ]
         ]);
 
-        $this->assertArrayHasKey('schemes', $docs);
-        $this->assertArrayHasKey('consumes', $docs);
-        $this->assertArrayHasKey('produces', $docs);
+        $this->assertArrayHasKey('servers', $docs);
+        $this->assertArrayHasKey('variables', $docs['servers'][0]);
+        $this->assertArrayHasKey('schema', $docs['servers'][0]['variables']);
+        $this->assertArrayHasKey('enum', $docs['servers'][0]['variables']['schema']);
+        $this->assertArrayHasKey('default', $docs['servers'][0]['variables']['schema']);
 
-        $this->assertContains('http', $docs['schemes']);
-        $this->assertContains('https', $docs['schemes']);
-        $this->assertContains('application/json', $docs['consumes']);
-        $this->assertContains('application/json', $docs['produces']);
+        $this->assertContains('http', $docs['servers'][0]['variables']['schema']['enum']);
+        $this->assertContains('https', $docs['servers'][0]['variables']['schema']['enum']);
+        $this->assertEquals('http', $docs['servers'][0]['variables']['schema']['default']);
+
+        $this->assertArrayHasKey('port', $docs['servers'][0]['variables']);
+        $this->assertArrayHasKey('enum', $docs['servers'][0]['variables']['port']);
+        $this->assertArrayHasKey('default', $docs['servers'][0]['variables']['port']);
+
+        $this->assertContains('8443', $docs['servers'][0]['variables']['port']['enum']);
+        $this->assertContains('443', $docs['servers'][0]['variables']['port']['enum']);
+        $this->assertEquals('443', $docs['servers'][0]['variables']['port']['default']);
+
+        $this->assertArrayHasKey('basePath', $docs['servers'][0]['variables']);
+        $this->assertArrayHasKey('default', $docs['servers'][0]['variables']['basePath']);
+        $this->assertEquals('v1', $docs['servers'][0]['variables']['basePath']['default']);
     }
 
     /**

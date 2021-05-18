@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlock\Tags\Generic;
 use phpDocumentor\Reflection\DocBlockFactory;
+use ReflectionClass;
 use ReflectionMethod;
 use Wilkques\OpenAPI\DataObjects\Route;
 
@@ -63,7 +64,9 @@ class Generator
             )
         );
 
-        if (!array_key_exists('paths', $this->docs)) $this->docs += ['paths' => []];
+        !array_key_exists('paths', $this->docs) && $this->docs += ['paths' => []];
+
+        isset($this->docs['servers']) && $this->docs['servers'] = array_unique($this->docs['servers'], SORT_REGULAR);
 
         return $this->docs;
     }
@@ -84,9 +87,13 @@ class Generator
             $this->routeFilter && $this->isFilteredRoute()
         ) return;
 
-        if (!isset($this->docs['paths'][$this->route->uri()])) {
-            $this->docs['paths'][$this->route->uri()] = [];
-        }
+        !isset($this->docs['paths'][$this->route->uri()]) && $this->docs['paths'][$this->route->uri()] = [];
+
+        $actionClassInstance = $this->getActionClassInstance();
+
+        $docBlock = $actionClassInstance ? ($actionClassInstance->getDocComment() ?: '') : '';
+
+        $this->parseActionDocBlock($docBlock);
 
         $closure($route->methods());
 
@@ -146,6 +153,39 @@ class Generator
     private function routeExceptAsName(string $name = null)
     {
         return is_null($name) ? false : in_array($name, $this->config['except']['routes']['name']);
+    }
+
+    /**
+     * @param string $parsedComment
+     * 
+     * @return static
+     */
+    private function parseActionDocBlock(string $parsedComment)
+    {
+        if (!$parsedComment) return $this;
+
+        $docBlock = $this->docParser->create($parsedComment);
+
+        $servers = $this->servers($docBlock);
+
+        !empty($servers) && $this->docs = array_merge_recursive($this->docs, compact('servers'));
+
+        return $this;
+    }
+
+    /**
+     * @param DocBlock $docBlock
+     * @param array $requestBdoy
+     * 
+     * @return array
+     */
+    protected function servers(DocBlock $docBlock, array $servers = [])
+    {
+        $serversDoc = $this->getDocsTagsByName($docBlock, 'server');
+
+        !empty($serversDoc) && $servers = collect($serversDoc)->map(fn ($server) => $this->docsBody($server))->pop();
+
+        return $servers;
     }
 
     /**
@@ -373,9 +413,9 @@ class Generator
      */
     protected function generatePath()
     {
-        $actionInstance = $this->getActionClassInstance();
+        $actionClassMethodInstance = $this->getActionClassMethodInstance($this->getActionClassInstance());
 
-        $docBlock = $actionInstance ? ($actionInstance->getDocComment() ?: '') : '';
+        $docBlock = $actionClassMethodInstance ? ($actionClassMethodInstance->getDocComment() ?: '') : '';
 
         $this->addActionParameters()->setDocsPaths($docBlock);
 
@@ -404,13 +444,6 @@ class Generator
     public function getContentType()
     {
         return $this->contentType;
-    }
-
-    protected function phpDocAnnotations($actionInstance)
-    {
-        return method_exists($actionInstance, 'getAttributes') ?
-            $actionInstance->getAttributes() :
-            $actionInstance->getDocComment();
     }
 
     /**
@@ -498,10 +531,10 @@ class Generator
      */
     protected function setDocsPaths(string $docBlock)
     {
-        [$isDeprecated, $summary, $description, $body, $tags, $security] = $this->parseActionDocBlock($docBlock);
+        [$isDeprecated, $summary, $description, $body, $tags, $security] = $this->parseActionMethodDocBlock($docBlock);
 
         $response = $this->responseBodyBuilder($body);
-        
+
         $data = [
             'summary'       => $summary,
             'description'   => $description,
@@ -555,7 +588,7 @@ class Generator
         foreach ($this->route->middleware() as $middleware) {
             if ($this->isPassportScopeMiddleware($middleware)) {
                 $this->docs['paths'][$this->route->uri()][$this->getMethod()]['security'] = [
-                    // FIXME: key oauth2 需要再設計
+                    // FIXME: key oauth2 need fix me
                     'oauth2' => $middleware->parameters(),
                 ];
             }
@@ -569,13 +602,13 @@ class Generator
      */
     protected function getFormRules(): array
     {
-        $actionInstance = $this->getActionClassInstance();
+        $actionClassMethodInstance = $this->getActionClassMethodInstance($this->getActionClassInstance());
 
-        if (!$actionInstance) {
+        if (!$actionClassMethodInstance) {
             return [];
         }
 
-        $parameters = $actionInstance->getParameters();
+        $parameters = $actionClassMethodInstance->getParameters();
 
         foreach ($parameters as $parameter) {
             // fix issues https://github.com/mtrajano/laravel-swagger/issues/60
@@ -608,9 +641,25 @@ class Generator
     }
 
     /**
-     * @return ReflectionMethod|null
+     * @return ReflectionClass|null
      */
-    private function getActionClassInstance(): ?ReflectionMethod
+    private function getActionClassInstance(): ?ReflectionClass
+    {
+        [$class] = Str::parseCallback($this->route->getActionName());
+
+        if (!$class) {
+            return null;
+        }
+
+        return new ReflectionClass($class);
+    }
+
+    /**
+     * @param ReflectionClass $actionInstance
+     * 
+     * @return ReflectionMethod
+     */
+    private function getActionClassMethodInstance(ReflectionClass $actionInstance): ?ReflectionMethod
     {
         [$class, $method] = Str::parseCallback($this->route->getActionName());
 
@@ -618,9 +667,7 @@ class Generator
             return null;
         }
 
-        $actionInstance = new ReflectionMethod($class, $method);
-
-        return $actionInstance;
+        return $actionInstance->getMethod($method);
     }
 
     /**
@@ -628,7 +675,7 @@ class Generator
      * 
      * @return array
      */
-    private function parseActionDocBlock(string $docBlock)
+    private function parseActionMethodDocBlock(string $docBlock)
     {
         if (!$docBlock || !$this->config['parseDocBlock']) {
             return $this->parseActionDocDefaultReturn();
@@ -812,7 +859,7 @@ class Generator
      */
     private function getEndpoint(string $path)
     {
-        return rtrim($this->config['baseic']['host'], '/') . $path;
+        return rtrim($this->config['baseic']['servers'][0]['url'], '/') . $path;
     }
 
     /**
