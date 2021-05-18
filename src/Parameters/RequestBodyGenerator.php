@@ -4,19 +4,20 @@ namespace Wilkques\OpenAPI\Parameters;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Wilkques\OpenAPI\Generator;
 
 class RequestBodyGenerator
 {
     use Concerns\GeneratesFromRules;
     /** @var array */
     protected $rules;
+    /** @var array */
+    protected $docRules;
     /** @var string */
     protected $contentType = 'application/json';
 
-    public function __construct(array $rules)
+    public function __construct(array $rules, array $docRules = [])
     {
-        $this->setRules($rules)->init();
+        $this->setRules($rules)->setDocRules($docRules)->init();
     }
 
     /**
@@ -48,6 +49,33 @@ class RequestBodyGenerator
     public function getRules()
     {
         return $this->rules;
+    }
+
+    /**
+     * @param array $rules
+     * 
+     * @return static
+     */
+    public function setDocRules(array $docRules)
+    {
+        $this->docRules = $docRules;
+
+        return $this;
+    }
+
+    /**
+     * @param string $key
+     * 
+     * @return array
+     */
+    public function getDocRules()
+    {
+        return $this->docRules;
+    }
+
+    public function getDocRulesByKey(string $key)
+    {
+        return $this->getDocRules()[$key] ?? [];
     }
 
     /**
@@ -117,7 +145,7 @@ class RequestBodyGenerator
         if ($this->getContentType() === 'multipart/form-data') {
             $this->addToPropertiesWithFormData($field, $fieldRule, $properties);
         } else {
-            $this->addToPropertiesWithJson(explode('.', $field), $fieldRule, $properties);
+            $this->addToPropertiesWithJson(explode('.', $field), $fieldRule, $properties, $field);
         }
     }
 
@@ -147,7 +175,7 @@ class RequestBodyGenerator
      * @param array $fieldRule
      * @param array &$properties
      */
-    protected function addToPropertiesWithJson(array $fields, array $fieldRule, array &$properties)
+    protected function addToPropertiesWithJson(array $fields, array $fieldRule, array &$properties, string $originFieldName = "")
     {
         $field = array_shift($fields);
 
@@ -165,9 +193,12 @@ class RequestBodyGenerator
         if (!empty($items)) {
             if (!empty($fields))
                 $properties[$field] += $items;
-            else
+            else {
                 $properties[$field] = $items;
+            }
         }
+
+        !in_array($type, ['array', 'object']) && $properties[$field] += $this->getDocRulesByKey($originFieldName);
 
         if (empty($fields)) {
             return;
@@ -182,12 +213,12 @@ class RequestBodyGenerator
         }
 
         if ($type === 'array') {
-            $this->addToPropertiesWithJson($fields, $fieldRule, $properties[$field]['items']);
+            $this->addToPropertiesWithJson($fields, $fieldRule, $properties[$field]['items'], $originFieldName);
         } elseif ($type === 'object') {
             if (isset($hasItems) && $hasItems) {
-                $this->addToPropertiesWithJson($fields, $fieldRule, $properties[$field]['items']['properties']);
+                $this->addToPropertiesWithJson($fields, $fieldRule, $properties[$field]['items']['properties'], $originFieldName);
             } else {
-                $this->addToPropertiesWithJson($fields, $fieldRule, $properties[$field]['properties']);
+                $this->addToPropertiesWithJson($fields, $fieldRule, $properties[$field]['properties'], $originFieldName);
             }
         }
     }
@@ -231,19 +262,21 @@ class RequestBodyGenerator
 
         !empty($enum) && $type += compact('enum');
 
-        $field = $this->propertiesFieldReName($field, $type['type']);
+        $newField = $this->propertiesFieldReName($field, $type['type']);
 
         if ($type['type'] === 'array') {
             $properties += [
-                $field => [
+                $newField => [
                     'type'  => 'array',
                     'items' => $type
                 ]
             ];
         } else {
             $properties += [
-                $field => $type
+                $newField => $type
             ];
+
+            $this->getDocRulesByKey($field) && $properties[$newField] += $this->getDocRulesByKey($field);
         }
     }
 

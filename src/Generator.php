@@ -556,14 +556,18 @@ class Generator
      */
     protected function addActionParameters()
     {
-        $rules = $this->getFormRules() ?: [];
+        if ($rules = $this->getFormRules())
+            [
+                'rulesInstance' => $rulesInstance,
+                'rules' => $rules
+            ] = $rules;
 
         $parameters = (new Parameters\PathParameterGenerator($this->route->originalUri()))->getParameters();
 
         if (!empty($rules)) {
             $this->rules = $rules;
 
-            $parameterGenerator = $this->getParameterGenerator($rules);
+            $parameterGenerator = $this->getParameterGenerator($rules, $rulesInstance);
 
             $parameters = array_merge_recursive($parameters, $parameterGenerator->getParameters());
         }
@@ -614,7 +618,10 @@ class Generator
                 : null;
             // fix https://github.com/mtrajano/laravel-swagger/issues/60 bug
             if ($class && $class->isSubclassOf(FormRequest::class)) {
-                return $class->newInstance()->rules();
+                return [
+                    'rulesInstance' => $class->getMethod('rules'),
+                    'rules' => $class->newInstance()->rules() ?: [],
+                ];
             }
         }
 
@@ -622,19 +629,57 @@ class Generator
     }
 
     /**
+     * @param array $rules
+     * @param ReflectionMethod $rulesInstance
+     * 
      * @return Parameters\QueryParameterGenerator|Parameters\RequestBodyGenerator
      */
-    protected function getParameterGenerator($rules)
+    protected function getParameterGenerator($rules, ReflectionMethod $rulesInstance = null)
     {
+        $docBlock = $rulesInstance ? ($rulesInstance->getDocComment() ?: '') : '';
+
+        $docFields = $this->parseFieldsActionDocBlock($docBlock);
+
         switch ($this->getMethod()) {
             case 'post':
             case 'put':
             case 'patch':
-                return new Parameters\RequestBodyGenerator($rules);
+                return new Parameters\RequestBodyGenerator($rules, $docFields);
             default:
-                return new Parameters\QueryParameterGenerator($rules);
+                return new Parameters\QueryParameterGenerator($rules, $docFields);
                 break;
         }
+    }
+
+    /**
+     * @param string $parsedComment
+     * 
+     * @return array
+     */
+    private function parseFieldsActionDocBlock(string $parsedComment)
+    {
+        if (!$parsedComment) return [];
+
+        $docBlock = $this->docParser->create($parsedComment);
+
+        $fields = $this->fields($docBlock);
+
+        return $fields;
+    }
+
+    /**
+     * @param DocBlock $docBlock
+     * @param array $fields
+     * 
+     * @return array
+     */
+    protected function fields(DocBlock $docBlock, array $fields = [])
+    {
+        $fieldsDoc = $this->getDocsTagsByName($docBlock, 'fields');
+
+        !empty($fieldsDoc) && $fields = collect($fieldsDoc)->map(fn ($field) => $this->docsBody($field))->pop();
+
+        return $fields;
     }
 
     /**

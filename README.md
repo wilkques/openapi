@@ -44,10 +44,10 @@ Say you have a route `/api/users/{id}` that maps to `UserController@show`
 
 Your sample controller might look like this:
 
-@Response() and @Request() input json string
+@Response() @Request() @Server() input json string
 ```php
 /**
- * @server([
+ * @Server([
  *      {
  *          "url": "{schema}://package.co",
  *          "description": "local server",
@@ -67,8 +67,8 @@ class TestController extends Controller
      * @Request({
      *      "summary": "test get /api/test index",
      *      "description": "Test route description",
-     *      "tags": ["Test"],
-     *      "security": [{"apikey": []}]
+     *      "tags": ["User"],
+     *      "security": [{"bearerAuth": []}]
      * })
      * @Response({
      *     "code": 302
@@ -87,10 +87,12 @@ class TestController extends Controller
      *              "body": {
      *                  "id": {
      *                      "type": "integer",
+     *                      "description": "file id",
      *                      "example": 1
      *                  },
      *                  "name": {
      *                      "type": "string",
+     *                      "description": "file name",
      *                      "example": "name"
      *                  }
      *              }
@@ -98,18 +100,29 @@ class TestController extends Controller
      *      }
      * })
      */
-    public function index(IndexRequest $request)
+    public function update(UserUpdateRequest $request)
 ```
 
 And the FormRequest class might look like this:
+
+@Fields() input json string
 ```php
-class UserShowRequest extends FormRequest
+class UserUpdateRequest extends FormRequest
 {
+    /**
+     * @Fields({
+     *      "test": {
+     *          "description": "Test description",
+     *          "example": 1
+     *      }
+     * })
+     */
     public function rules()
     {
         return [
-            'fields' => 'array'
-            'show_relationships' => 'boolean|required'
+            'test'          => 'in:1,2',
+            'file.*.name'   => 'required|string',
+            'file.*.path'   => 'required|string',
         ];
     }
 }
@@ -146,47 +159,113 @@ Running `artisan openapi:generate --output=storage/api-docs/api-docs.json` will 
                 "type": "http",
                 "scheme": "bearer",
                 "bearerFormat": "JWT"
-            },
-            "apikey": {
-                "type": "apiKey",
-                "description": "A short description for security scheme",
-                "name": "api_key",
-                "in": "header"
             }
         }
     },
     "paths": {
         "\/api\/user\/{id}": {
-            "get": {
+            "put": {
                 "summary": "Return all the details of a user",
                 "description": "Returns the user's first name, last name and address
  Please see the documentation [here](https://example.com/users) for more information",
                 "deprecated": true,
+                "security": [{
+                    "bearerAuth": []
+                }],
+                "tags": ["User"],
                 "parameters": [
                     {
                         "in": "path",
                         "name": "id",
-                        "type": "integer",
                         "required": true,
-                        "description": ""
+                        "description": "",
+                        "schema": {
+                            "type": "integer"
+                        }
                     },
                     {
                         "in": "query",
-                        "name": "fields",
-                        "type": "array",
+                        "name": "test",
                         "required": false,
-                        "description": ""
-                    },
-                    {
-                        "in": "query",
-                        "name": "show_relationships",
-                        "type": "boolean",
-                        "required": true,
-                        "description": ""
+                        "description": "Test description",
+                        "schema": {
+                            "type": "enum",
+                            "enum": ["1","2"],
+                            "example": 1
+                        }
                     }
                 ],
+                "requestBody": {
+                    "content": {
+                        "application\/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "file.*.name",
+                                    "file.*.path"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string",
+                                                    "description": "Test file name",
+                                                    "example": "file name"
+                                                },
+                                                "path": {
+                                                    "type": "string",
+                                                    "description": "Test file path",
+                                                    "example": "file path"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 "responses": {
+                    "302": {
+                        "description": "Found"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    },
                     "200": {
+                        "content": {
+                            "application\/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",           
+                                                        "description": "file id",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",           
+                                                        "description": "file name",
+                                                        "example": "name"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         "description": "OK"
                     }
                 }
