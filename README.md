@@ -48,12 +48,26 @@ Your sample controller might look like this:
 
 @Response() and @Request() input json string
 ```php
+/**
+ * @server([
+ *      {
+ *          "url": "{schema}://package.co",
+ *          "description": "local server",
+ *          "variables": {
+ *              "schema": {
+ *                  "enum": ["https", "http"],
+ *                  "default": "http"
+ *              }
+ *          }
+ *      }
+ * ])
+ */
 class TestController extends Controller
 {
     /**
      * test controller
      * @Request({
-     *      "summary": "Test get /api/test index",
+     *      "summary": "test get /api/test index",
      *      "description": "Test route description",
      *      "tags": ["Test"],
      *      "security": [{"apikey": []}]
