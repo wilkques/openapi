@@ -1,7 +1,5 @@
 # Laravel OAS3
 
-**Please note this package is deprecated and is no longer being maintained. For the time being I will accept bug fix prs but will try to avoid adding any large features to it. If you are interested in taking over the project please shoot me an email and we can work it out.**
-
 Laravel OAS3 scans your Laravel project's endpoints and auto generates a OAS3 documentation for you.
 
 [![Build Status](https://travis-ci.com/wilkques/openapi.svg?branch=master)](https://travis-ci.org/wilkques/openapi)
