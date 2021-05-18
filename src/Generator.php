@@ -565,10 +565,7 @@ class Generator
 
             $parameterGenerator = $this->getParameterGenerator($rules);
 
-            if ($this->getMethod() == "post")
-                $parameters = $parameterGenerator->getParameters();
-            else
-                $parameters = array_merge($parameters, $parameterGenerator->getParameters());
+            $parameters = array_merge_recursive($parameters, $parameterGenerator->getParameters());
         }
 
         $this->docs['paths'][$this->route->uri()][$this->getMethod()] = [];
