@@ -120,6 +120,12 @@ return [
     'securityDefinitions' => [
         'securitySchemes' => [
             /*
+            'bearerAuth' => [            # arbitrary name for the security scheme
+                'type' => 'http',
+                'scheme' => 'bearer',
+                'bearerFormat' => 'JWT'    # optional, arbitrary value for documentation purposes
+            ],
+ 
             'apikey' => [ // Unique name of security
                 'type' => 'apiKey', // The type of the security scheme. Valid values are "basic", "apiKey" or "oauth2".
                 'description' => 'A short description for security scheme',
@@ -138,6 +144,7 @@ return [
                     'user-write'
                 ]
             ],
+
             // Open API 3.0 support
             'passport' => [ // Unique name of security
                 'type' => 'oauth2', // The type of the security scheme. Valid values are "basic", "apiKey" or "oauth2".
