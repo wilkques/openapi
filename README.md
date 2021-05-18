@@ -127,8 +127,36 @@ Running `artisan openapi:generate --output=storage/api-docs/api-docs.json` will 
         "description": "Test",
         "version": "1.0.1"
     },
-    "host": "http:\/\/localhost",
-    "basePath": "\/",
+    "servers": [
+        {
+            "url": "\/",
+            "description": "server",
+            "variables": {
+                "schema": {
+                    "enum": [
+                        "https",
+                        "http"
+                    ],
+                    "default": "http"
+                }
+            }
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            },
+            "apikey": {
+                "type": "apiKey",
+                "description": "A short description for security scheme",
+                "name": "api_key",
+                "in": "header"
+            }
+        }
+    },
     "paths": {
         "\/api\/user\/{id}": {
             "get": {
