@@ -447,6 +447,23 @@ class Generator
     }
 
     /**
+     * @param array $body
+     * 
+     * @return array
+     */
+    protected function requestBodyBuilder(array $body)
+    {
+        [
+            'body'          => $content,
+            'parameters'    => $parameters
+        ] = $body;
+
+        $requestBody = compact('content');
+
+        return compact('requestBody', 'parameters');
+    }
+
+    /**
      * @param array $response
      * 
      * @return array
@@ -474,7 +491,7 @@ class Generator
                 fn ($item) => $this->itemsHandle($item)
             )->toArray();
 
-            $body = $this->contentHandle($items);
+            $body = $this->setContentType()->contentHandle($items);
         }
 
         $code = [
@@ -531,22 +548,37 @@ class Generator
      */
     protected function setDocsPaths(string $docBlock)
     {
-        [$isDeprecated, $summary, $description, $body, $tags, $security] = $this->parseActionMethodDocBlock($docBlock);
-
-        $response = $this->responseBodyBuilder($body);
-
-        $data = [
+        [
+            'deprecated'    => $deprecated,
             'summary'       => $summary,
             'description'   => $description,
-            'deprecated'    => $isDeprecated,
-            'responses'     => $response,
-        ];
+            'responseBody'  => $responseBody,
+            'tags'          => $tags,
+            'security'      => $security,
+            'requestBody'   => $requestBodys,
+        ] = $this->parseActionMethodDocBlock($docBlock);
+
+        $responses = $this->responseBodyBuilder($responseBody);
+
+        [
+            'parameters'    => $parameters,
+            'requestBody'   => $requestBody
+        ] = $this->requestBodyBuilder($requestBodys);
+
+        $data = compact('summary', 'description', 'deprecated', 'responses');
+
+        $parameters && $data += compact('parameters');
+
+        $requestBody && $data += compact('requestBody');
 
         $tags && $data += compact('tags');
 
         $security && $data += compact('security');
 
-        $this->docs['paths'][$this->route->uri()][$this->getMethod()] += $data;
+        if (!$parameters || !$requestBody)
+            $this->docs['paths'][$this->route->uri()][$this->getMethod()] += $data;
+        else
+            $this->docs['paths'][$this->route->uri()][$this->getMethod()] = $data;
 
         return $this;
     }
@@ -556,11 +588,12 @@ class Generator
      */
     protected function addActionParameters()
     {
-        if ($rules = $this->getFormRules())
+        if ($rules = $this->getFormRules()) {
             [
                 'rulesInstance' => $rulesInstance,
                 'rules' => $rules
             ] = $rules;
+        }
 
         $parameters = (new Parameters\PathParameterGenerator($this->route->originalUri()))->getParameters();
 
@@ -634,7 +667,7 @@ class Generator
      * 
      * @return Parameters\QueryParameterGenerator|Parameters\RequestBodyGenerator
      */
-    protected function getParameterGenerator($rules, ReflectionMethod $rulesInstance = null)
+    protected function getParameterGenerator(array $rules, ReflectionMethod $rulesInstance = null)
     {
         $docBlock = $rulesInstance ? ($rulesInstance->getDocComment() ?: '') : '';
 
@@ -728,16 +761,24 @@ class Generator
 
             $responseBody = $this->responseBody($parsedComment);
 
-            $requestBody = $this->requestBody($parsedComment);
+            [
+                'summary'       => $summary,
+                'description'   => $description,
+                'tags'          => $tags,
+                'security'      => $security,
+                'body'          => $body,
+                'parameters'    => $parameters,
+            ] = $this->requestBody($parsedComment);
 
-            return [
-                $parsedComment->hasTag('deprecated'),
-                $requestBody['summary'] ?? $parsedComment->getSummary(),
-                $requestBody['description'] ?? (string) $parsedComment->getDescription(),
-                $responseBody,
-                $requestBody['tags'] ?? null,
-                $requestBody['security'] ?? null,
-            ];
+            $requestBody = compact('body', 'parameters') ?: [];
+
+            $deprecated = $parsedComment->hasTag('deprecated');
+
+            $summary = $summary ?: $parsedComment->getSummary();
+
+            $description = $description ?: (string) $parsedComment->getDescription();
+
+            return compact('summary', 'description', 'tags', 'security', 'deprecated', 'responseBody', 'requestBody');
         } catch (OpenAPIException $e) {
             throw $e;
         } catch (\Exception $e) {
@@ -769,7 +810,7 @@ class Generator
 
         !empty($requestDoc) && $requestBody = collect($requestDoc)->map(fn ($request) => $this->requestDocBody($request))->pop();
 
-        return $requestBody;
+        return $requestBody ?: $this->requestDefaultArray();
     }
 
     /**
@@ -781,12 +822,22 @@ class Generator
     {
         $data = $this->docsBody($docs);
 
-        return array_replace_recursive([
+        return array_replace_recursive($this->requestDefaultArray(), $data);
+    }
+
+    /**
+     * @return array
+     */
+    protected function requestDefaultArray()
+    {
+        return [
             'summary'       => null,
             'description'   => null,
             'tags'          => null,
-            'security'      => null
-        ], $data);
+            'security'      => null,
+            'body'          => null,
+            'parameters'    => null,
+        ];
     }
 
     /**
@@ -845,20 +896,24 @@ class Generator
      */
     private function parseActionDocDefaultReturn(
         int $code = 200,
-        bool $isDeprecated = false,
+        bool $deprecated = false,
         string $summary = '',
         string $description = '',
-        array $body = [],
+        array $responseBody = [],
         array $tags = null,
-        array $security = null
+        array $security = null,
+        array $requestBody = [
+            'body' => [],
+            'parameters' => []
+        ]
     ) {
-        return [$isDeprecated, $summary, $description, [
-            [
-                "code"          => $code,
-                "body"          => $body,
-                "description"   => \Illuminate\Http\Response::$statusTexts[$code]
-            ]
-        ], $tags, $security];
+        $responseBody = [[
+            "code"          => $code,
+            "body"          => $responseBody,
+            "description"   => \Illuminate\Http\Response::$statusTexts[$code]
+        ]];
+
+        return compact('deprecated', 'summary', 'description', 'responseBody', 'tags', 'security', 'requestBody');
     }
 
     /**

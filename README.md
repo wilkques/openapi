@@ -49,7 +49,7 @@ Your sample controller might look like this:
 /**
  * @Server([
  *      {
- *          "url": "{schema}://package.co",
+ *          "url": "{schema}://example.com",
  *          "description": "local server",
  *          "variables": {
  *              "schema": {
@@ -101,6 +101,51 @@ class TestController extends Controller
      * })
      */
     public function update(UserUpdateRequest $request)
+```
+
+Or custom Request
+
+```php
+/**
+ * @Request({
+ *      "summary": "test get /api/test index",
+ *      "description": "Test route description",
+ *      "tags": ["Test"],
+ *      "security": [{"bearerAuth": []}],
+ *      "parameters": [
+ *          {
+ *              "in": "query",
+ *              "name": "test",
+ *              "required": "false",
+ *              "description": "Test description123",
+ *              "schema": {
+ *                  "type": "string",
+ *                  "enum": [1, 2],
+ *                  "example": "1"
+ *              }
+ *          }
+ *      ],
+ *      "body": {
+ *          "application/json": {
+ *              "schema": {
+ *                  "type": "object",
+ *                  "required": ["file"],
+ *                  "properties": {
+ *                      "file":{
+ *                          "type": "string",
+ *                          "format": "binary",   
+ *                          "description": "file upload" 
+ *                      },
+ *                      "content":{
+ *                          "type": "string"
+ *                      }
+ *                  }
+ *              }
+ *          }
+ *      }
+ * })
+ */
+public function index(IndexRequest $request)
 ```
 
 And the FormRequest class might look like this:
