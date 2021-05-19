@@ -567,15 +567,15 @@ class Generator
 
         $data = compact('summary', 'description', 'deprecated', 'responses');
 
-        $parameters && $data += compact('parameters');
+        !empty($parameters) && $data += compact('parameters');
 
-        $requestBody && $data += compact('requestBody');
+        !empty($requestBody['content']) && $data += compact('requestBody');
 
         $tags && $data += compact('tags');
 
         $security && $data += compact('security');
 
-        if (!$parameters || !$requestBody)
+        if (empty($parameters) || empty($requestBody['content']))
             $this->docs['paths'][$this->route->uri()][$this->getMethod()] += $data;
         else
             $this->docs['paths'][$this->route->uri()][$this->getMethod()] = $data;
