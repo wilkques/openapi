@@ -117,7 +117,7 @@ Or custom Request
  *              "in": "query",
  *              "name": "test",
  *              "required": "false",
- *              "description": "Test description123",
+ *              "description": "Test description",
  *              "schema": {
  *                  "type": "string",
  *                  "enum": [1, 2],
@@ -126,7 +126,7 @@ Or custom Request
  *          }
  *      ],
  *      "body": {
- *          "application/json": {
+ *          "multipart/form-data": {
  *              "schema": {
  *                  "type": "object",
  *                  "required": ["file"],
@@ -145,7 +145,7 @@ Or custom Request
  *      }
  * })
  */
-public function index(IndexRequest $request)
+public function store(StoreRequest $request)
 ```
 
 And the FormRequest class might look like this:
