@@ -34,21 +34,23 @@ class GenerateOpenAPIDocCommand extends Command
             $config = config('openapi');
             $filter = $this->option('filter') ?: null;
             $file = $this->option('output') ?: null;
-    
+
             $generator = GeneratorOpenAPIDoc::format($this->option('format'))
                 ->generator(new Generator($config, $filter));
-    
-            if ($file)
+
+            if ($file) {
                 $generator->outputDoc($file);
-            else
+                $this->info('Generate Complete');
+            } else {
                 $this->line($generator->output());
+            }
         } catch (JsonFormatException $e) {
             $message = json_decode($e->getMessage(), true);
 
-            $this->line('Error Message');
+            $this->error('Error Message');
             $this->line($message['ErrorMessage']);
 
-            $this->line('Json String');
+            $this->error('Json String');
             $this->line($message['JsonString']);
         }
     }
