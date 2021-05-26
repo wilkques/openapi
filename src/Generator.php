@@ -508,12 +508,12 @@ class Generator
      */
     private function itemsHandle(array $item)
     {
-        ['type' => $type, 'body' => $body] = $item;
+        ['type' => $type] = $item;
 
         if ($type === 'array') {
             $items = [
                 'type' => 'object',
-                'properties' => $body
+                'properties' => $item['body']
             ];
 
             return compact('type', 'items');
@@ -779,6 +779,8 @@ class Generator
             $description = $description ?: (string) $parsedComment->getDescription();
 
             return compact('summary', 'description', 'tags', 'security', 'deprecated', 'responseBody', 'requestBody');
+        } catch (JsonFormatException $e) {
+            throw $e;
         } catch (OpenAPIException $e) {
             throw $e;
         } catch (\Exception $e) {
@@ -925,20 +927,29 @@ class Generator
      */
     private function phpDoc(string $docParser)
     {
-        $data = json_decode(
-            Str::of($docParser)
-                ->replace('(', '')
-                ->replace(')', ''),
-            true
-        );
+        $jsonString = Str::of($docParser)
+            ->replace('(', '')
+            ->replace(')', '');
+
+        $data = json_decode($jsonString, true);
 
         ['code' => $code, 'message' => $message] = json_error_check();
 
         if ($code) {
-            throw new OpenAPIException($message, 403);
+            throw new JsonFormatException(json_encode([
+                'ErrorMessage' => $message,
+                'JsonString' => $this->errorJsonString($jsonString->__toString())
+            ]), 403);
         }
 
         return $data;
+    }
+
+    private function errorJsonString($jsonString)
+    {
+        $jsonString = trim(preg_replace('/\s+/', ' ', $jsonString));
+
+        return stripslashes($jsonString);
     }
 
     /**
