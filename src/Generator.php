@@ -417,7 +417,7 @@ class Generator
 
         $docBlock = $actionClassMethodInstance ? ($actionClassMethodInstance->getDocComment() ?: '') : '';
 
-        $this->addActionParameters()->setDocsPaths($docBlock);
+        $this->addActionParameters($docBlock)->setDocsPaths($docBlock);
 
         if ($this->hasSecurityDefinitions) {
             $this->addActionScopes();
@@ -584,9 +584,11 @@ class Generator
     }
 
     /**
+     * @param string $docBlock
+     * 
      * @return static
      */
-    protected function addActionParameters()
+    protected function addActionParameters(string $docBlock)
     {
         if ($rules = $this->getFormRules()) {
             [
@@ -595,7 +597,7 @@ class Generator
             ] = $rules;
         }
 
-        $parameters = (new Parameters\PathParameterGenerator($this->route->originalUri()))->getParameters();
+        $parameters = (new Parameters\PathParameterGenerator($this->route->originalUri(), $this->parsePathsActionDocBlock($docBlock)))->getParameters();
 
         if (!empty($rules)) {
             $this->rules = $rules;
@@ -682,6 +684,37 @@ class Generator
                 return new Parameters\QueryParameterGenerator($rules, $docFields);
                 break;
         }
+    }
+
+    /**
+     * @param string $parsedComment
+     * 
+     * @return array
+     */
+    private function parsePathsActionDocBlock(string $parsedComment)
+    {
+        if (!$parsedComment) return [];
+
+        $docBlock = $this->docParser->create($parsedComment);
+
+        $paths = $this->paths($docBlock);
+
+        return $paths;
+    }
+
+    /**
+     * @param DocBlock $docBlock
+     * @param array $fields
+     * 
+     * @return array
+     */
+    protected function paths(DocBlock $docBlock, array $paths = [])
+    {
+        $pathsDoc = $this->getDocsTagsByName($docBlock, 'path');
+
+        !empty($pathsDoc) && $paths = collect($pathsDoc)->map(fn ($path) => $this->docsBody($path))->pop();
+
+        return $paths;
     }
 
     /**

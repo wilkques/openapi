@@ -44,7 +44,7 @@ Say you have a route `/api/users/{id}` that maps to `UserController@show`
 
 Your sample controller might look like this:
 
-@Response() @Request() @Server() input json string
+@Response() @Request() @Server() @Path() input json string
 ```php
 /**
  * @Server([
@@ -64,6 +64,12 @@ class TestController extends Controller
 {
     /**
      * test controller
+     * @Path({
+     *      "id": {
+     *          "description": "id",
+     *          "example": "123456789"
+     *      }
+     * })
      * @Request({
      *      "summary": "test get /api/test index",
      *      "description": "Test route description",
