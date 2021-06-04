@@ -162,7 +162,7 @@ If you don't want generate route. might look like this:
 /**
  * @exceptRoute
  */ 
-public function destroy(StoreRequest $request)
+public function destroy($id)
 ```
 Or
 
