@@ -68,6 +68,8 @@ class Generator
 
         isset($this->docs['servers']) && $this->docs['servers'] = array_unique($this->docs['servers'], SORT_REGULAR);
 
+        $this->docs['paths'] = collect($this->docs['paths'])->filter()->toArray();
+
         return $this->docs;
     }
 
@@ -86,8 +88,6 @@ class Generator
             $this->routeExcept($route) ||
             $this->routeFilter && $this->isFilteredRoute()
         ) return;
-
-        !isset($this->docs['paths'][$this->route->uri()]) && $this->docs['paths'][$this->route->uri()] = [];
 
         $actionClassInstance = $this->getActionClassInstance();
 
@@ -556,7 +556,14 @@ class Generator
             'tags'          => $tags,
             'security'      => $security,
             'requestBody'   => $requestBodys,
+            'exceptRoute'   => $exceptRoute,
         ] = $this->parseActionMethodDocBlock($docBlock);
+
+        if ($exceptRoute) {
+            unset($this->docs['paths'][$this->route->uri()][$this->getMethod()]);
+
+            return $this;
+        }
 
         $responses = $this->responseBodyBuilder($responseBody);
 
@@ -807,11 +814,13 @@ class Generator
 
             $deprecated = $parsedComment->hasTag('deprecated');
 
+            $exceptRoute = $parsedComment->hasTag('exceptRoute');
+
             $summary = $summary ?: $parsedComment->getSummary();
 
             $description = $description ?: (string) $parsedComment->getDescription();
 
-            return compact('summary', 'description', 'tags', 'security', 'deprecated', 'responseBody', 'requestBody');
+            return compact('summary', 'description', 'tags', 'security', 'deprecated', 'responseBody', 'requestBody', 'exceptRoute');
         } catch (JsonFormatException $e) {
             throw $e;
         } catch (OpenAPIException $e) {
@@ -940,7 +949,8 @@ class Generator
         array $requestBody = [
             'body' => [],
             'parameters' => []
-        ]
+        ],
+        bool $exceptRoute = false
     ) {
         $responseBody = [[
             "code"          => $code,
@@ -948,7 +958,7 @@ class Generator
             "description"   => \Illuminate\Http\Response::$statusTexts[$code]
         ]];
 
-        return compact('deprecated', 'summary', 'description', 'responseBody', 'tags', 'security', 'requestBody');
+        return compact('deprecated', 'summary', 'description', 'responseBody', 'tags', 'security', 'requestBody', 'exceptRoute');
     }
 
     /**
