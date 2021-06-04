@@ -64,6 +64,7 @@ class TestController extends Controller
 {
     /**
      * test controller
+     * 
      * @Path({
      *      "id": {
      *          "description": "id",
@@ -152,6 +153,38 @@ Or custom Request
  * })
  */
 public function store(StoreRequest $request)
+```
+
+If you don't want generate route. might look like this:
+
+```php
+
+/**
+ * @exceptRoute
+ */ 
+public function destroy(StoreRequest $request)
+```
+Or
+
+Editor `config/openapi.php`
+```php
+
+'only' => [
+    'namespace' => [
+        // 'App\Http\Controllers',
+    ],
+],
+
+'except' => [
+    'routes' => [
+        'uri'   => [
+            // route uri
+        ],
+        'name'  => [
+            // route name or as
+        ]
+    ],
+],
 ```
 
 And the FormRequest class might look like this:
