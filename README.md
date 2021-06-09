@@ -91,16 +91,19 @@ class TestController extends Controller
      *      "body": {
      *          "data": {
      *              "type": "array",
-     *              "body": {
-     *                  "id": {
-     *                      "type": "integer",
-     *                      "description": "file id",
-     *                      "example": 1
-     *                  },
-     *                  "name": {
-     *                      "type": "string",
-     *                      "description": "file name",
-     *                      "example": "name"
+     *              "items": {
+     *                  "type": "object",
+     *                  "properties": {
+     *                      "id": {
+     *                          "type": "integer",
+     *                          "description": "file id",
+     *                          "example": 1
+     *                      },
+     *                      "name": {
+     *                          "type": "string",
+     *                          "description": "file name",
+     *                          "example": "name"
+     *                      }
      *                  }
      *              }
      *          }

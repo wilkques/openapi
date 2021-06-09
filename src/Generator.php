@@ -487,11 +487,11 @@ class Generator
         $body = [];
 
         if (isset($content["body"]) && !empty($content["body"])) {
-            $items = collect($content["body"])->transform(
-                fn ($item) => $this->itemsHandle($item)
-            )->toArray();
+            // $items = collect($content["body"])->transform(
+            //     fn ($item) => $this->itemsHandle($item)
+            // )->toArray();
 
-            $body = $this->setContentType()->contentHandle($items);
+            $body = $this->setContentType()->contentHandle($content["body"]);
         }
 
         $code = [
