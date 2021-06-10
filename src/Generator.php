@@ -583,7 +583,7 @@ class Generator
         $security && $data += compact('security');
 
         if (empty($parameters) || empty($requestBody['content']))
-            $this->docs['paths'][$this->route->uri()][$this->getMethod()] += $data;
+            $this->docs['paths'][$this->route->uri()][$this->getMethod()] = array_replace_recursive($this->docs['paths'][$this->route->uri()][$this->getMethod()], $data);
         else
             $this->docs['paths'][$this->route->uri()][$this->getMethod()] = $data;
 
