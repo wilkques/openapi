@@ -175,7 +175,7 @@ class RequestBodyGenerator
      * @param array $fieldRule
      * @param array &$properties
      */
-    protected function addToPropertiesWithJson(array $fields, array $fieldRule, array &$properties, string $originFieldName = "")
+    protected function addToPropertiesWithJson(array $fields, array $fieldRule, array &$properties = null, string $originFieldName = "")
     {
         $field = array_shift($fields);
 
