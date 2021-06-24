@@ -25,6 +25,8 @@ class Generator
     protected $config;
     /** @var string|null */
     protected $routeFilter;
+    /** @var string|null */
+    protected $routeExcept;
     /** @var array */
     protected $docs;
     /** @var Route */
@@ -40,10 +42,61 @@ class Generator
 
     public function __construct(array $config, string $routeFilter = null)
     {
-        $this->config = $config;
-        $this->routeFilter = $routeFilter;
+        $this->setConfig($config)->setRouteFilter($routeFilter);
         $this->docParser = DocBlockFactory::createInstance();
         $this->hasSecurityDefinitions = false;
+    }
+
+    /**
+     * @param array $config
+     * 
+     * @return static
+     */
+    public function setConfig(array $config)
+    {
+        $this->config = $config;
+
+        return $this;
+    }
+
+    /**
+     * @param string|null $routeFilter
+     * 
+     * @return static
+     */
+    public function setRouteFilter(string $routeFilter = null)
+    {
+        $this->routeFilter = $routeFilter;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getRouteFilter()
+    {
+        return $this->routeFilter;
+    }
+
+    /**
+     * @param string|null $routeExcept
+     * 
+     * @return static
+     */
+    public function setExceptRoute(string $routeExcept = null)
+    {
+        $this->routeExcept = $routeExcept;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getExceptRoute()
+    {
+        return $this->routeExcept;
     }
 
     /**
@@ -86,7 +139,8 @@ class Generator
         if (
             $this->routeOnlyNamespace($route->getActionNamespace()) ||
             $this->routeExcept($route) ||
-            $this->routeFilter && $this->isFilteredRoute()
+            $this->getRouteFilter() && $this->isFilteredRoute() ||
+            $this->getExceptRoute() && $this->isExceptRoute()
         ) return;
 
         $actionClassInstance = $this->getActionClassInstance();
@@ -1000,7 +1054,15 @@ class Generator
      */
     private function isFilteredRoute()
     {
-        return !preg_match('/^' . preg_quote($this->routeFilter, '/') . '/', $this->route->uri());
+        return !preg_match('/^' . preg_quote($this->getRouteFilter(), '/') . '/', $this->route->uri());
+    }
+
+    /**
+     * @return boolean
+     */
+    private function isExceptRoute()
+    {
+        return preg_match('/^' . preg_quote($this->getExceptRoute(), '/') . '/', $this->route->uri());
     }
 
     /**

@@ -12,27 +12,27 @@ class FormatterManager
     private $formatter;
     /** @var array */
     private $setMethods = [
-        'generator'
+        'generator',
     ];
 
     /**
-     * @param GeneratorSwaggerDoc $generatorSwaggerDoc
+     * @param GeneratorOpenAPIDoc $generatorOpenAPIDoc
      * 
      * @return static
      */
-    public function setGeneratorSwaggerDoc(GeneratorOpenAPIDoc $generatorSwaggerDoc)
+    public function setGeneratorSwaggerDoc(GeneratorOpenAPIDoc $generatorOpenAPIDoc)
     {
-        $this->generatorSwaggerDoc = $generatorSwaggerDoc;
+        $this->generatorOpenAPIDoc = $generatorOpenAPIDoc;
 
         return $this;
     }
 
     /**
-     * @return GeneratorSwaggerDoc
+     * @return GeneratorOpenAPIDoc
      */
-    public function getGeneratorSwaggerDoc()
+    public function getGeneratorOpenAPIDoc()
     {
-        return $this->generatorSwaggerDoc;
+        return $this->generatorOpenAPIDoc;
     }
 
     /**
@@ -56,7 +56,7 @@ class FormatterManager
     }
 
     /**
-     * @throws LaravelSwaggerException
+     * @throws OpenAPIException
      * 
      * @return static
      */
@@ -70,7 +70,7 @@ class FormatterManager
                 $this->formatter = new Formatters\YamlFormatter($this->getGenerate());
                 break;
             default:
-                throw new LaravelSwaggerException('Invalid format passed');
+                throw new OpenAPIException('Invalid format passed');
                 break;
         }
 
@@ -97,6 +97,6 @@ class FormatterManager
     {
         in_array($method, $this->setMethods) && $method = sprintf("set%s", ucfirst(trim($method)));
 
-        return $this->getGeneratorSwaggerDoc()->setFormatterManager($this)->$method(...$arguments);
+        return $this->getGeneratorOpenAPIDoc()->setFormatterManager($this)->$method(...$arguments);
     }
 }

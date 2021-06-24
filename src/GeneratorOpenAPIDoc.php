@@ -19,6 +19,9 @@ class GeneratorOpenAPIDoc
         'format'
     ];
 
+    /**
+     * @param Generator|null $generator
+     */
     public function __construct(Generator $generator = null)
     {
         $this->setGenerator($generator);
@@ -143,7 +146,7 @@ class GeneratorOpenAPIDoc
         return new FormatterManager;
     }
 
-    public function __call($method, $arguments)
+    public function __call(string $method, array $arguments)
     {
         in_array($method, $this->setMethods) && $method = sprintf("set%s", ucfirst(trim($method)));
 
@@ -152,7 +155,7 @@ class GeneratorOpenAPIDoc
         return $instance->setGeneratorSwaggerDoc($this)->$method(...$arguments);
     }
 
-    public static function __callStatic($method, $arguments)
+    public static function __callStatic(string $method, array $arguments)
     {
         return (new static)->$method(...$arguments);
     }

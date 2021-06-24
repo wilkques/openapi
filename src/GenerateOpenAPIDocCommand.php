@@ -14,6 +14,7 @@ class GenerateOpenAPIDocCommand extends Command
     protected $signature = 'openapi:generate
                             {--format=json : The format of the output, current options are json and yaml}
                             {--f|filter= : Filter to a specific route prefix, such as /api or /v2/api}
+                            {--e|except= : Except to a specific route prefix, such as /api or /v2/api}
                             {--o|output= : Output file to write the contents to, defaults to stdout}';
 
     /**
@@ -34,9 +35,12 @@ class GenerateOpenAPIDocCommand extends Command
             $config = config('openapi');
             $filter = $this->option('filter') ?: null;
             $file = $this->option('output') ?: null;
+            $except = $this->option('except') ?: null;
 
             $generator = GeneratorOpenAPIDoc::format($this->option('format'))
-                ->generator(new Generator($config, $filter));
+                ->generator(
+                    (new Generator($config, $filter))->setExceptRoute($except)
+                );
 
             if ($file) {
                 $generator->outputDoc($file);
