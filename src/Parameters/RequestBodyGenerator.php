@@ -188,7 +188,7 @@ class RequestBodyGenerator
             $properties[$field]['type'] = $type;
         }
 
-        $items = $this->itemsNextCheck($fields, $this->getParamType($fieldRule));
+        $items = $this->itemsNextCheck($fields, $this->getParamType($fieldRule), $originFieldName);
 
         if (!empty($items)) {
             if (!empty($fields))
@@ -226,19 +226,27 @@ class RequestBodyGenerator
     /**
      * @param array &$fields
      * @param string $type
+     * @param string originFieldName
      * @param array $items
      * 
      * @return array
      */
-    protected function itemsNextCheck(array &$fields, string $type, array $items = [])
+    protected function itemsNextCheck(array &$fields, string $type, string $originFieldName, array $items = [])
     {
         if (current($fields) === '*') {
             array_shift($fields);
 
-            $items = [
-                'type'  => 'array',
-                'items' => empty($fields) ? compact('type') : $this->itemsNextCheck($fields, $type)
-            ];
+            if ($fields) {
+                $items = [
+                    'type'  => 'array',
+                    'items' => empty($fields) ? compact('type') : $this->itemsNextCheck($fields, $type, $originFieldName)
+                ];
+            } elseif (!next($fields)) {
+                $items = [
+                    'type'  => 'array',
+                    'items' => compact('type') + $this->getDocRulesByKey($originFieldName)
+                ];
+            }
         }
 
         return $items;
