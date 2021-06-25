@@ -236,17 +236,12 @@ class RequestBodyGenerator
         if (current($fields) === '*') {
             array_shift($fields);
 
-            if ($fields) {
-                $items = [
-                    'type'  => 'array',
-                    'items' => empty($fields) ? compact('type') : $this->itemsNextCheck($fields, $type, $originFieldName)
-                ];
-            } elseif (!next($fields)) {
-                $items = [
-                    'type'  => 'array',
-                    'items' => compact('type') + $this->getDocRulesByKey($originFieldName)
-                ];
-            }
+            $items = [
+                'type'  => 'array',
+                'items' => empty($fields) ?
+                    compact('type') + $this->getDocRulesByKey($originFieldName) :
+                    $this->itemsNextCheck($fields, $type, $originFieldName)
+            ];
         }
 
         return $items;
