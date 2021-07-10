@@ -4,6 +4,7 @@ namespace Wilkques\OpenAPI;
 
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlock\Tags\Generic;
@@ -117,13 +118,23 @@ class Generator
             )
         );
 
+        $this->docsDataHandle();
+
+        return $this->docs;
+    }
+
+    /**
+     * @return static
+     */
+    private function docsDataHandle()
+    {
         !array_key_exists('paths', $this->docs) && $this->docs += ['paths' => []];
 
         isset($this->docs['servers']) && $this->docs['servers'] = array_unique($this->docs['servers'], SORT_REGULAR);
 
         $this->docs['paths'] = collect($this->docs['paths'])->filter()->toArray();
 
-        return $this->docs;
+        return $this;
     }
 
     /**
@@ -136,12 +147,7 @@ class Generator
     {
         $this->route = $route;
 
-        if (
-            $this->routeOnlyNamespace($route->getActionNamespace()) ||
-            $this->routeExcept($route) ||
-            $this->getRouteFilter() && $this->isFilteredRoute() ||
-            $this->getExceptRoute() && $this->isExceptRoute()
-        ) return;
+        if ($this->routeFilterAndExcept()) return;
 
         $actionClassInstance = $this->getActionClassInstance();
 
@@ -155,15 +161,24 @@ class Generator
     }
 
     /**
-     * @param string|null $namespace
-     * 
      * @return boolean
      */
-    private function routeOnlyNamespace(string $namespace = null)
+    private function routeFilterAndExcept()
+    {
+        return $this->routeOnlyNamespace() ||
+            $this->routeExcept() ||
+            $this->getRouteFilter() && $this->isFilteredRoute() ||
+            $this->getExceptRoute() && $this->isExceptRoute();
+    }
+
+    /**
+     * @return boolean
+     */
+    private function routeOnlyNamespace()
     {
         return !empty($this->config['only']['namespace']) &&
             !Str::containsAll(
-                Str::start($namespace, "\\"),
+                Str::start($this->route->getActionNamespace(), "\\"),
                 array_map(
                     fn ($item) => Str::start($item, '\\'),
                     $this->config['only']['namespace']
@@ -172,15 +187,13 @@ class Generator
     }
 
     /**
-     * @param Route $route
-     * 
      * @return boolean
      */
-    private function routeExcept(Route $route)
+    private function routeExcept()
     {
         return !empty($this->config['except']['routes']) &&
-            $this->routeExceptUri($route->uri()) ||
-            $this->routeExceptAsName($route->getAs());
+            $this->routeExceptUri($this->route->uri()) ||
+            $this->routeExceptAsName($this->route->getAs());
     }
 
     /**
@@ -288,29 +301,40 @@ class Generator
      */
     protected function generateSecurityDefinitions()
     {
-        $securityDefinitions = $this->config['securityDefinitions']['securitySchemes'];
+        return collect(
+            $this->config['securityDefinitions']['securitySchemes']
+        )->transform(
+            fn ($item, $key) => $this->securityTransfrom($item, $key)
+        )->toArray();
+    }
 
-        return collect($securityDefinitions)->transform(function ($item, $key) {
-            if ($item['type'] === 'apiKey') {
-                $this->securitySchemesKeysCheck($item, [
-                    'type', 'in', 'name', 'description'
-                ], $key);
+    /**
+     * @param array $item
+     * @param string $key
+     * 
+     * @return array
+     */
+    protected function securityTransfrom(array $item = null, string $key = null)
+    {
+        if ($item['type'] === 'apiKey') {
+            $this->securitySchemesKeysCheck($item, [
+                'type', 'in', 'name', 'description'
+            ], $key);
+        }
+
+        if ($item['type'] === 'oauth2') {
+            $scopes = $this->generateOauthScopes();
+
+            if (isset($item['flow'])) {
+                return $this->oauth2SecuritySchemes($item, $scopes);
             }
 
-            if ($item['type'] === 'oauth2') {
-                $scopes = $this->generateOauthScopes();
-
-                if (isset($item['flow'])) {
-                    return $this->oauth2SecuritySchemes($item, $scopes);
-                }
-
-                if (isset($item['flows'])) {
-                    $this->passportSecuritySchemes($item, $scopes, $key);
-                }
+            if (isset($item['flows'])) {
+                $this->passportSecuritySchemes($item, $scopes, $key);
             }
+        }
 
-            return $item;
-        })->toArray();
+        return $item;
     }
 
     /**
@@ -322,27 +346,86 @@ class Generator
     private function oauth2SecuritySchemes(array $item, array $scopes)
     {
         $authFlow = $item['flow'];
+
         $this->validateAuthFlow($authFlow);
 
-        $flowData = [];
+        $flowData = $this->setAuthorizationUrlEndpotin($item, $authFlow);
 
-        if ($this->authorizationUrl($item) == '' && in_array($authFlow, ['implicit', 'accessCode'])) {
-            $flowData['authorizationUrl'] = $this->getEndpoint(self::OAUTH_AUTHORIZE_PATH);
-        }
-
-        if ($this->tokenUrl($item) == '' && in_array($authFlow, ['password', 'application', 'accessCode'])) {
-            $flowData['tokenUrl'] = $this->getEndpoint(self::OAUTH_TOKEN_PATH);
-        }
-
-        $flowData['scopes'] = empty($this->scopes($item)) ? $scopes : $item['scopes'];
+        $flowData = $this->setTokenUrlEndpotin($item, $authFlow, $flowData);
 
         return [
             'type' => $item['type'],
-            'description' => isset($item['description']) ? $item['description'] : '',
+            'description' => $item['description'] ?? '',
             'flows' => [
-                $authFlow => $flowData
+                $authFlow => $this->setScopes($item, $scopes, $flowData)
             ]
         ];
+    }
+
+    /**
+     * @param array $item
+     * @param array $scopes
+     * @param array $flowData
+     * 
+     * @return array
+     */
+    private function setScopes(array $item, array $scopes, array $flowData)
+    {
+        $scopes = empty($this->scopes($item)) ? $scopes : $item['scopes'];
+
+        return compact('scopes') + $flowData;
+    }
+
+    /**
+     * @param array $item
+     * @param string $authFlow
+     * @param array $flowData
+     * 
+     * @return array
+     */
+    private function setAuthorizationUrlEndpotin(array $item, string $authFlow, array $flowData = [])
+    {
+        $this->checkAuthorizationUrlEndpotin($item, $authFlow) &&
+            $flowData['authorizationUrl'] = $this->getEndpoint(self::OAUTH_AUTHORIZE_PATH);
+
+        return $flowData;
+    }
+
+    /**
+     * @param array $item
+     * @param string $authFlow
+     * 
+     * @return boolean
+     */
+    private function checkAuthorizationUrlEndpotin(array $item, string $authFlow)
+    {
+        return $this->authorizationUrl($item) == '' && in_array($authFlow, ['implicit', 'accessCode']);
+    }
+
+    /**
+     * @param array $item
+     * @param string $authFlow
+     * @param array $flowData
+     * 
+     * @return array
+     */
+    private function setTokenUrlEndpotin(array $item, string $authFlow, array $flowData = [])
+    {
+        $this->checkTokenUrlEndpotin($item, $authFlow) &&
+            $flowData['tokenUrl'] = $this->getEndpoint(self::OAUTH_TOKEN_PATH);
+
+        return $flowData;
+    }
+
+    /**
+     * @param array $item
+     * @param string $authFlow
+     * 
+     * @return boolean
+     */
+    private function checkTokenUrlEndpotin(array $item, string $authFlow)
+    {
+        return $this->tokenUrl($item) == '' && in_array($authFlow, ['password', 'application', 'accessCode']);
     }
 
     /**
@@ -364,21 +447,7 @@ class Generator
 
         $refreshUrl = $this->getEndpoint(self::OAUTH_REFRESH_PATH);
 
-        if (isset($item['flows']['authorizationCode'])) {
-            $data = $item['flows']['authorizationCode'];
-
-            $this->authorizationUrl($data) == '' && $data['authorizationUrl'] = $authorizationUrl;
-
-            $this->tokenUrl($data) == '' && $data['tokenUrl'] = $tokenUrl;
-
-            $this->refreshUrl($data) == '' && $data['refreshUrl'] = $refreshUrl;
-
-            empty($this->scopes($data)) && $data['scopes'] = $scopes;
-        }
-
-        if (!isset($item['flows']['authorizationCode'])) {
-            $item['flows']['authorizationCode'] = compact('authorizationUrl', 'tokenUrl', 'refreshUrl', 'scopes');
-        }
+        $item['flows']['authorizationCode'] = compact('authorizationUrl', 'tokenUrl', 'refreshUrl', 'scopes');
 
         return $item;
     }
@@ -603,15 +672,10 @@ class Generator
     protected function setDocsPaths(string $docBlock)
     {
         [
-            'deprecated'    => $deprecated,
-            'summary'       => $summary,
-            'description'   => $description,
             'responseBody'  => $responseBody,
-            'tags'          => $tags,
-            'security'      => $security,
             'requestBody'   => $requestBodys,
             'exceptRoute'   => $exceptRoute,
-        ] = $this->parseActionMethodDocBlock($docBlock);
+        ] = $data = $this->parseActionMethodDocBlock($docBlock);
 
         if ($exceptRoute) {
             unset($this->docs['paths'][$this->route->uri()][$this->getMethod()]);
@@ -619,22 +683,7 @@ class Generator
             return $this;
         }
 
-        $responses = $this->responseBodyBuilder($responseBody);
-
-        [
-            'parameters'    => $parameters,
-            'requestBody'   => $requestBody
-        ] = $this->requestBodyBuilder($requestBodys);
-
-        $data = compact('summary', 'description', 'deprecated', 'responses');
-
-        !empty($parameters) && $data += compact('parameters');
-
-        !empty($requestBody['content']) && $data += compact('requestBody');
-
-        $tags && $data += compact('tags');
-
-        $security && $data += compact('security');
+        $data = $this->dataBuilder($requestBodys, $responseBody, $data);
 
         if (empty($parameters) || empty($requestBody['content']))
             $this->docs['paths'][$this->route->uri()][$this->getMethod()] = array_replace_recursive($this->docs['paths'][$this->route->uri()][$this->getMethod()], $data);
@@ -642,6 +691,43 @@ class Generator
             $this->docs['paths'][$this->route->uri()][$this->getMethod()] = $data;
 
         return $this;
+    }
+
+    /**
+     * @param array $requestBodys
+     * @param array $responseBody
+     * @param array $data
+     * 
+     * @return array
+     */
+    private function dataBuilder(array $requestBodys, array $responseBody, array $data)
+    {
+        $responses = $this->responseBodyBuilder($responseBody);
+
+        [
+            'parameters'    => $parameters,
+            'requestBody'   => $requestBody
+        ] = $this->requestBodyBuilder($requestBodys);
+
+        $data = array_replace_recursive(
+            Arr::except(
+                $data,
+                [
+                    'exceptRoute', 'requestBodys', 'responseBody'
+                ]
+            ),
+            compact('responses')
+        );
+
+        !empty($parameters) && $data += compact('parameters');
+
+        !empty($requestBody['content']) && $data += compact('requestBody');
+
+        $data = array_filter($data, function ($item) {
+            return $item !== null;
+        });
+
+        return $data;
     }
 
     /**
@@ -858,8 +944,6 @@ class Generator
             [
                 'summary'       => $summary,
                 'description'   => $description,
-                'tags'          => $tags,
-                'security'      => $security,
                 'body'          => $body,
                 'parameters'    => $parameters,
             ] = $this->requestBody($parsedComment);
@@ -874,13 +958,23 @@ class Generator
 
             $description = $description ?: (string) $parsedComment->getDescription();
 
-            return compact('summary', 'description', 'tags', 'security', 'deprecated', 'responseBody', 'requestBody', 'exceptRoute');
+            return array_replace_recursive(
+                Arr::except(
+                    $this->requestBody($parsedComment),
+                    [
+                        'body', 'parameters'
+                    ]
+                ),
+                compact('summary', 'description', 'deprecated', 'responseBody', 'requestBody', 'exceptRoute')
+            );
         } catch (JsonFormatException $e) {
             throw $e;
         } catch (OpenAPIException $e) {
             throw $e;
         } catch (\Exception $e) {
-            return $this->parseActionDocDefaultReturn(500);
+            $code = 500;
+
+            return $this->parseActionDocDefaultReturn(compact('code'));
         }
     }
 
@@ -992,27 +1086,32 @@ class Generator
      * 
      * @return array
      */
-    private function parseActionDocDefaultReturn(
-        int $code = 200,
-        bool $deprecated = false,
-        string $summary = '',
-        string $description = '',
-        array $responseBody = [],
-        array $tags = null,
-        array $security = null,
-        array $requestBody = [
-            'body' => [],
-            'parameters' => []
-        ],
-        bool $exceptRoute = false
-    ) {
+    private function parseActionDocDefaultReturn(array $options = [])
+    {
+        $default = [
+            'code'          => 200,
+            'deprecated'    => false,
+            'summary'       => '',
+            'description'   => '',
+            'responseBody'  => [],
+            'tags'          => null,
+            'security'      => null,
+            'requestBody'   => [
+                'body' => [],
+                'parameters' => []
+            ],
+            'exceptRoute'   => false,
+        ];
+
+        $options = array_replace_recursive($default, $options);
+
         $responseBody = [[
-            "code"          => $code,
-            "body"          => $responseBody,
-            "description"   => \Illuminate\Http\Response::$statusTexts[$code]
+            "code"          => $options['code'],
+            "body"          => $options['responseBody'],
+            "description"   => \Illuminate\Http\Response::$statusTexts[$options['code']]
         ]];
 
-        return compact('deprecated', 'summary', 'description', 'responseBody', 'tags', 'security', 'requestBody', 'exceptRoute');
+        return $options + compact('responseBody');
     }
 
     /**
