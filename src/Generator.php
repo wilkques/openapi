@@ -918,7 +918,7 @@ class Generator
     {
         [$class, $method] = Str::parseCallback($this->route->getActionName());
 
-        if (!$class || !$method) {
+        if (!$class || !$method || ($class && !method_exists($class, $method))) {
             return null;
         }
 
