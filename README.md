@@ -1,4 +1,4 @@
-# Laravel OAS3
+# Laravel Open Api Swagger 3
 
 Laravel OAS3 scans your Laravel project's endpoints and auto generates a OAS3 documentation for you.
 
