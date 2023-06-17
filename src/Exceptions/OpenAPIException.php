@@ -1,6 +1,6 @@
 <?php
 
-namespace Wilkques\OpenAPI;
+namespace Wilkques\OpenAPI\Exceptions;
 
 class OpenAPIException extends \Exception
 {

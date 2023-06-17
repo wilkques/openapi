@@ -44,7 +44,7 @@ Say you have a route `/api/users/{id}` that maps to `UserController@show`
 
 Your sample controller might look like this:
 
-@Response() @Request() @Server() @Path() input json string
+@Response() @Request() @Server() @Path() input json format or yaml format (need php YAML extension)
 ```php
 /**
  * @Server([

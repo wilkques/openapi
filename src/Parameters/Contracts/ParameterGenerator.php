@@ -1,6 +1,6 @@
 <?php
 
-namespace Wilkques\OpenAPI\Parameters;
+namespace Wilkques\OpenAPI\Parameters\Contracts;
 
 interface ParameterGenerator
 {

@@ -12,6 +12,8 @@ use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
 use ReflectionMethod;
 use Wilkques\OpenAPI\DataObjects\Route;
+use Wilkques\OpenAPI\Exceptions\JsonFormatException;
+use Wilkques\OpenAPI\Exceptions\OpenAPIException;
 
 class Generator
 {
@@ -40,6 +42,8 @@ class Generator
     protected $hasSecurityDefinitions;
     /** @var string */
     protected $contentType = "application/json";
+    /** @var array */
+    protected $rules;
 
     public function __construct(array $config, string $routeFilter = null)
     {
@@ -1115,18 +1119,26 @@ class Generator
     }
 
     /**
-     * @param string $docs
-     * 
-     * @throws OpenAPIException
+     * @param \Illuminate\Support\Str|string $yamlString
      * 
      * @return array
      */
-    private function phpDoc(string $docParser)
+    public function yaml($yamlString)
     {
-        $jsonString = Str::of($docParser)
-            ->replace('(', '')
-            ->replace(')', '');
+        if (!extension_loaded('yaml')) {
+            throw new \RuntimeException('YAML extension must be loaded to use the yaml output format');
+        }
 
+        return \yaml_parse($yamlString);
+    }
+
+    /**
+     * @param \Illuminate\Support\Str|string $jsonString
+     * 
+     * @return array
+     */
+    public function json($jsonString)
+    {
         $data = json_decode($jsonString, true);
 
         ['code' => $code, 'message' => $message] = json_error_check();
@@ -1136,6 +1148,28 @@ class Generator
                 'ErrorMessage' => $message,
                 'JsonString' => $this->errorJsonString($jsonString->__toString())
             ]), 403);
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param string $docs
+     * 
+     * @throws OpenAPIException
+     * 
+     * @return array
+     */
+    private function phpDoc(string $docParser)
+    {
+        $docString = Str::of($docParser)
+            ->replace('(', '')
+            ->replace(')', '');
+
+        if (Str::startsWith($docString, '{') && Str::endsWith($docString, '}')) {
+            $data = $this->json($docString);
+        } else {
+            $data = $this->yaml($docString);
         }
 
         return $data;

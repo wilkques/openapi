@@ -3,6 +3,7 @@
 namespace Wilkques\OpenAPI\Parameters;
 
 use Illuminate\Support\Str;
+use Wilkques\OpenAPI\Parameters\Contracts\ParameterGenerator;
 
 class PathParameterGenerator implements ParameterGenerator
 {

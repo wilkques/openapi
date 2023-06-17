@@ -5,9 +5,8 @@ namespace Wilkques\OpenAPI\Parameters;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
-class RequestBodyGenerator
+class RequestBodyGenerator extends ParameterGenerates
 {
-    use Concerns\GeneratesFromRules;
     /** @var array */
     protected $rules;
     /** @var array */
@@ -136,7 +135,7 @@ class RequestBodyGenerator
     }
 
     /**
-     * @param array $field
+     * @param string $field
      * @param array $fieldRule
      * @param array &$properties
      */
@@ -279,7 +278,9 @@ class RequestBodyGenerator
                 $newField => $type
             ];
 
-            $this->getDocRulesByKey($field) && $properties[$newField] += $this->getDocRulesByKey($field);
+            if ($rules = $this->getDocRulesByKey($field)) {
+                $properties[$newField] += $rules;
+            }
         }
     }
 

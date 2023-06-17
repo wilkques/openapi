@@ -70,7 +70,7 @@ class FormatterManager
                 $this->formatter = new Formatters\YamlFormatter($this->getGenerate());
                 break;
             default:
-                throw new OpenAPIException('Invalid format passed');
+                throw new \Wilkques\OpenAPI\Exceptions\OpenAPIException('Invalid format passed');
                 break;
         }
 

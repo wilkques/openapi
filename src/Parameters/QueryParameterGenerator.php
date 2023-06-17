@@ -2,10 +2,10 @@
 
 namespace Wilkques\OpenAPI\Parameters;
 
-class QueryParameterGenerator implements ParameterGenerator
-{
-    use Concerns\GeneratesFromRules;
+use Wilkques\OpenAPI\Parameters\Contracts\ParameterGenerator;
 
+class QueryParameterGenerator extends ParameterGenerates implements ParameterGenerator
+{
     protected $rules;
     /** @var array */
     protected $docRules;

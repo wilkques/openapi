@@ -1,10 +1,10 @@
 <?php
 
-namespace Wilkques\OpenAPI\Parameters\Concerns;
+namespace Wilkques\OpenAPI\Parameters;
 
 use Illuminate\Support\Str;
 
-trait GeneratesFromRules
+abstract class ParameterGenerates
 {
     /**
      * @param string|array $rules

@@ -48,7 +48,7 @@ class GenerateOpenAPIDocCommand extends Command
             } else {
                 $this->line($generator->output());
             }
-        } catch (JsonFormatException $e) {
+        } catch (\Wilkques\OpenAPI\Exceptions\JsonFormatException $e) {
             $message = json_decode($e->getMessage(), true);
 
             $this->error('Error Message');
@@ -56,6 +56,9 @@ class GenerateOpenAPIDocCommand extends Command
 
             $this->error('Json String');
             $this->line($message['JsonString']);
+        } catch (\RuntimeException $e) {
+            $this->error($e->getMessage());
+            $this->line($e->getMessage());
         }
     }
 }
