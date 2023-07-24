@@ -5,9 +5,12 @@ namespace Wilkques\OpenAPI\Tests\Parameters;
 use Illuminate\Validation\Rule;
 use Wilkques\OpenAPI\Parameters\QueryParameterGenerator;
 use Wilkques\OpenAPI\Tests\TestCase;
+use Wilkques\OpenAPI\Traits\CollectionTrait;
 
 class QueryParameterGeneratorTest extends TestCase
 {
+    use CollectionTrait;
+
     public function testRequiredParameter()
     {
         ['parameters' => $queryParameters] = $this->getQueryParameters([
@@ -87,27 +90,27 @@ class QueryParameterGeneratorTest extends TestCase
             'values.*' => 'integer',
         ]);
 
-        $this->assertSame('array', $queryParameters[0]['type']);
+        $this->assertSame('array', $queryParameters[0]['schema']['type']);
         $this->assertSame('values', $queryParameters[0]['name']);
-        $this->assertSame(['type' => 'integer'], $queryParameters[0]['items']);
+        $this->assertSame(['type' => 'integer'], $queryParameters[0]['schema']['items']);
         $this->assertSame(false, $queryParameters[0]['required']);
     }
 
     public function testArrayValidationSyntaxWithRequiredArray()
     {
         ['parameters' => $queryParameters] = $this->getQueryParameters([
-            'values.*' => 'integer',
-            'values' => 'required',
+            'values.*'  => 'integer',
+            'values'    => 'required',
         ]);
 
-        $this->assertSame('array', $queryParameters[0]['type']);
+        $this->assertSame('array', $queryParameters[0]['schema']['type']);
         $this->assertSame('values', $queryParameters[0]['name']);
-        $this->assertSame(['type' => 'integer'], $queryParameters[0]['items']);
+        $this->assertSame(['type' => 'integer'], $queryParameters[0]['schema']['items']);
         $this->assertSame(true, $queryParameters[0]['required']);
     }
 
     private function getQueryParameters(array $rules)
     {
-        return (new QueryParameterGenerator($rules))->getParameters();
+        return (new QueryParameterGenerator($this->collection($rules)))->getParameters();
     }
 }

@@ -44,10 +44,10 @@ Say you have a route `/api/users/{id}` that maps to `UserController@show`
 
 Your sample controller might look like this:
 
-@Response() @Request() @Server() @Path() input json format or yaml format (need php YAML extension)
+@Response() @Request() @Servers() @Path() input json format or yaml format (need php YAML extension)
 ```php
 /**
- * @Server([
+ * @Servers([
  *      {
  *          "url": "{schema}://example.com",
  *          "description": "local server",
@@ -163,7 +163,7 @@ If you don't want generate route. might look like this:
 ```php
 
 /**
- * @exceptRoute
+ * @exclude
  */ 
 public function destroy($id)
 ```
@@ -178,7 +178,7 @@ Editor `config/openapi.php`
     ],
 ],
 
-'except' => [
+'exclude' => [
     'routes' => [
         'uri'   => [
             // route uri
@@ -192,7 +192,7 @@ Editor `config/openapi.php`
 
 And the FormRequest class might look like this:
 
-@Fields() input json string
+@Fields() input json string or yaml format (need php YAML extension)
 ```php
 class UserUpdateRequest extends FormRequest
 {

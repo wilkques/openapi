@@ -6,10 +6,13 @@ class FormatterManager
 {
     /** @var GeneratorOpenAPIDoc */
     private $generatorOpenAPIDoc;
+
     /** @var string */
     private $format = "json";
+
     /** @var Formatters\JsonFormatter|Formatters\YamlFormatter */
     private $formatter;
+
     /** @var array */
     private $setMethods = [
         'generator',

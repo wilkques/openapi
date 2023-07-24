@@ -32,14 +32,22 @@ class GenerateOpenAPIDocCommand extends Command
     public function handle()
     {
         try {
-            $config = config('openapi');
+            $this->registerApp();
+
+            $config = config();
             $filter = $this->option('filter') ?: null;
             $file = $this->option('output') ?: null;
             $except = $this->option('except') ?: null;
+            $format = $this->option('format') ?: 'json';
 
-            $generator = GeneratorOpenAPIDoc::format($this->option('format'))
+            /** @var \Wilkques\OpenAPI\DataObjects\Routes */
+            $routes = app(\Wilkques\OpenAPI\DataObjects\Routes::class);
+
+            $generator = GeneratorOpenAPIDoc::format($format)
                 ->generator(
-                    (new Generator($config, $filter))->setExceptRoute($except)
+                    (new Generator(
+                        $routes->setFilterRoute($filter)->setExcludeRoute($except), $config
+                    ))
                 );
 
             if ($file) {
@@ -60,5 +68,12 @@ class GenerateOpenAPIDocCommand extends Command
             $this->error($e->getMessage());
             $this->line($e->getMessage());
         }
+    }
+
+    public function registerApp()
+    {
+        app()->scoped(\phpDocumentor\Reflection\DocBlockFactory::class, function () {
+            return \phpDocumentor\Reflection\DocBlockFactory::createInstance();
+        });
     }
 }

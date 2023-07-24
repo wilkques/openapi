@@ -2,35 +2,60 @@
 
 namespace Wilkques\OpenAPI\Parameters;
 
+use Illuminate\Support\Arr;
+use Wilkques\OpenAPI\Helpers\Collection;
 use Wilkques\OpenAPI\Parameters\Contracts\ParameterGenerator;
 
 class QueryParameterGenerator extends ParameterGenerates implements ParameterGenerator
 {
+    /** @var Collection */
     protected $rules;
-    /** @var array */
+
+    /** @var Collection */
     protected $docRules;
 
-    public function __construct($rules, array $docRules = [])
-    {
-        $this->rules = $rules;
+    /** @var Collection */
+    protected $docQuery;
 
-        $this->setDocRules($docRules);
+    public function __construct(Collection $rules, Collection $docRules = null, Collection $docQuery = null)
+    {
+        $this->setRules($rules)->setDocRules($docRules)->setDocQuery($docQuery);
     }
 
     /**
-     * @param array $docRules
+     * @param Collection $rules
      * 
      * @return static
      */
-    public function setDocRules(array $docRules = [])
+    public function setRules(Collection $rules)
     {
-        $this->docRules = $docRules;
+        $this->rules = $rules;
 
         return $this;
     }
 
     /**
-     * @return array
+     * @return Collection
+     */
+    public function getRules()
+    {
+        return $this->rules;
+    }
+
+    /**
+     * @param Collection $docRules
+     * 
+     * @return static
+     */
+    public function setDocRules(Collection $docRules = null)
+    {
+        $this->docRules = $docRules ? $docRules : $this->collection();
+
+        return $this;
+    }
+
+    /**
+     * @return Collection
      */
     public function getDocRules()
     {
@@ -38,23 +63,33 @@ class QueryParameterGenerator extends ParameterGenerates implements ParameterGen
     }
 
     /**
-     * @param string|null $key
+     * @param string $key
      * 
-     * @return array|string
+     * @return Collection|mixed
      */
-    public function getDocRulesByKey(string $key = null)
+    public function getDocRulesByKey(string $key)
     {
-        return $this->getDocRules()[$key] ?? [];
+        return $this->getDocRules()->get($key, $this->collection());
     }
 
     /**
-     * @param string|null $key
+     * @param Collection $docQuery
      * 
-     * @return array|string
+     * @return static
      */
-    public function getDescription(string $key)
+    public function setDocQuery(Collection $docQuery = null)
     {
-        return $this->getDocRulesByKey($key)['description'] ?? '';
+        $this->docQuery = $docQuery ?: $this->collection();
+
+        return $this;
+    }
+
+    /**
+     * @return Collection
+     */
+    public function getDocQuery()
+    {
+        return $this->docQuery;
     }
 
     /**
@@ -67,87 +102,130 @@ class QueryParameterGenerator extends ParameterGenerates implements ParameterGen
         return $this->getDocRulesByKey($key)['example'] ?? '';
     }
 
+    /**
+     * @return array
+     */
     public function getParameters()
     {
-        $params = [];
-        $arrayTypes = [];
+        $parameters = [];
 
-        foreach ($this->rules as $param => $rule) {
-            $paramRules = $this->splitRules($rule);
-            $enum = $this->getEnumValues($paramRules);
-            $type = $this->getParamType($paramRules);
+        $rulesTmp = [];
 
-            if ($this->isArrayParameter($param)) {
-                $arrayKey = $this->getArrayKey($param);
-                $arrayTypes[$arrayKey] = $type;
+        foreach ($this->getRules() as $field => $rule) {
+            // Retrieve the first field name.
+            $firstField = $this->getFirstField($field);
+
+            // To retrieve all field names from the rule array that match a specified field name, such as "abc" and "abc.*".
+            $matchFields = $this->matchFields($firstField);
+
+            // Parse the rules.
+            $rule = $this->splitRules($rule);
+
+            // Compare the extracted field array to check if it contains a specified field name.
+            $matchField = $this->hasField($matchFields, $firstField);
+
+            // Ensure that the extracted field array has a quantity of no more than 1 and does not contain the symbol "." (dot). 
+            // Check if the extracted field array contains a specified field name. 
+            // Finally, store the result in "rulesTmp", with the first field name as "keyname".
+            if ($matchFields->count() > 1 and !$this->hasFields($field, '.') and $matchField) {
+                $required = in_array('required', $rule);
+
+                $rulesTmp[$firstField] = compact('required');
+
                 continue;
             }
 
-            $paramObj = [
-                'in' => $this->getParamLocation(),
-                'name' => $param,
-                'required' => $this->isParamRequired($paramRules),
-                'description' => $this->getDescription($param),
-            ];
+            // Retrieve the required fields.
+            $requiredProperties = $this->requiredProperties($rule, $field);
 
-            $schema = [
-                'type' => $type
-            ];
+            // Generate schema.
+            $schema = $this->parameters($field, $rule);
 
-            if (!empty($enum)) {
-                $schema += compact('enum');
-            }
-
-            $example = $this->getExample($param);
-
-            if ($type === 'array') {
-                $items = [
-                    'type' => 'string'
-                ];
-
-                $schema += compact('items');
-
-              $example  !== '' && $schema['items'] += compact('example');
-            } else {
-                $example  !== '' && $schema += compact('example');
-            }
-
-            $params[$param] = $paramObj + compact('schema');
+            $parameters[$firstField] = array_merge_distinct_recursive([
+                'in'            => $this->getParamLocation(),
+                'name'          => $firstField,
+                'required'      => $this->isPropertyRequired($requiredProperties),
+                'schema'        => array_shift($schema),
+            ], $parameters[$firstField] ?? [], $this->queryParameters($field));
         }
 
-        $params = $this->addArrayTypes($params, $arrayTypes);
+        if ($rulesTmp) {
+            foreach ($rulesTmp as $field => $rule) {
+                $parameters[$field] = array_merge($parameters[$field], $rule);
+            }
+        }
 
-        return ['parameters' => array_values($params)];
+        // If the controller method includes query, merge it with the current properties and remove duplicates.
+        if ($docRequestBody = $this->getDocQuery()) {
+            $parameters = array_merge_distinct_recursive($docRequestBody->toArray(), $parameters);
+        }
+
+        $parameters = array_values($parameters);
+
+        return compact('parameters');
     }
 
-    protected function addArrayTypes($params, $arrayTypes)
+    /**
+     * @param string $pattern
+     * 
+     * @return Collection
+     */
+    protected function matchFields($pattern)
     {
-        foreach ($arrayTypes as $arrayKey => $type) {
-            $example = $this->getExample($arrayKey);
-            if (!isset($params[$arrayKey])) {
-                $params[$arrayKey] = [
-                    'in' => $this->getParamLocation(),
-                    'name' => $arrayKey,
-                    'type' => 'array',
-                    'required' => false,
-                    'description' => $this->getExample($arrayKey),
-                    'items' => [
-                        'type' => $type,
-                    ],
-                ];
-            } else {
-                $params[$arrayKey]['type'] = 'array';
-                $params[$arrayKey]['items']['type'] = $type;
-            }
-
-            $example !== '' && $params[$arrayKey]['items'] += compact('example');
-        }
-
-        return $params;
+        return $this->getRules()->filter(function ($value, $key) use ($pattern) {
+            return preg_match("/{$pattern}/", $key);
+        });
     }
 
+    /**
+     * @param Collection $fields
+     * @param string $field
+     * 
+     * @return bool
+     */
+    protected function hasField($fields, $field)
+    {
+        return $fields->contains(function ($value, $key) use ($field) {
+            return $key === $field;
+        });
+    }
+
+    /**
+     * @param string $field
+     * 
+     * @return array
+     */
+    protected function queryParameters($field)
+    {
+        $hasPointer = $this->hasFields($field, '*', '.');
+
+        $queryParameters = [];
+
+        if ($hasPointer && !str_ends_with($field, '*')) {
+            $queryParameters = [
+                'explode'   => $hasPointer,
+                'style'     => 'deepObject',
+            ];
+        }
+
+        return $queryParameters;
+    }
+
+    /**
+     * @return string
+     */
     public function getParamLocation()
     {
         return 'query';
+    }
+
+    /**
+     * @param Collection|array $rule
+     * 
+     * @return boolean
+     */
+    protected function isMime($rule)
+    {
+        return false;
     }
 }

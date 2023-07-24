@@ -2,21 +2,26 @@
 
 namespace Wilkques\OpenAPI\Parameters;
 
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Wilkques\OpenAPI\Helpers\Collection;
 
 class RequestBodyGenerator extends ParameterGenerates
 {
-    /** @var array */
+    /** @var Collection */
     protected $rules;
-    /** @var array */
+
+    /** @var Collection */
     protected $docRules;
+
+    /** @var Collection */
+    protected $docRequestBody;
+
     /** @var string */
     protected $contentType = 'application/json';
 
-    public function __construct(array $rules, array $docRules = [])
+    public function __construct(Collection $rules, Collection $docRules = null, Collection $docRequestBody = null)
     {
-        $this->setRules($rules)->setDocRules($docRules)->init();
+        $this->setRules($rules)->setDocRules($docRules)->setDocRequestBody($docRequestBody)->init();
     }
 
     /**
@@ -24,18 +29,19 @@ class RequestBodyGenerator extends ParameterGenerates
      */
     public function init()
     {
-        if ($this->mimeMethodCheck($this->getRules()))
+        if ($this->isMime($this->getRules())) {
             $this->setContentType('multipart/form-data');
+        }
 
         return $this;
     }
 
     /**
-     * @param array $rules
+     * @param Collection $rules
      * 
      * @return static
      */
-    public function setRules(array $rules)
+    public function setRules(Collection $rules)
     {
         $this->rules = $rules;
 
@@ -43,7 +49,7 @@ class RequestBodyGenerator extends ParameterGenerates
     }
 
     /**
-     * @return array
+     * @return Collection
      */
     public function getRules()
     {
@@ -51,30 +57,53 @@ class RequestBodyGenerator extends ParameterGenerates
     }
 
     /**
-     * @param array $rules
+     * @param Collection $rules
      * 
      * @return static
      */
-    public function setDocRules(array $docRules)
+    public function setDocRules(Collection $docRules = null)
     {
-        $this->docRules = $docRules;
+        $this->docRules = $docRules ?: $this->collection();
 
         return $this;
     }
 
     /**
-     * @param string $key
-     * 
-     * @return array
+     * @return Collection
      */
     public function getDocRules()
     {
         return $this->docRules;
     }
 
+    /**
+     * @param string $key
+     * 
+     * @return Collection|mixed
+     */
     public function getDocRulesByKey(string $key)
     {
-        return $this->getDocRules()[$key] ?? [];
+        return $this->getDocRules()->get($key, $this->collection());
+    }
+
+    /**
+     * @param Collection $rules
+     * 
+     * @return static
+     */
+    public function setDocRequestBody(Collection $docRequestBody = null)
+    {
+        $this->docRequestBody = $docRequestBody ?: $this->collection();
+
+        return $this;
+    }
+
+    /**
+     * @return Collection
+     */
+    public function getDocRequestBody()
+    {
+        return $this->docRequestBody;
     }
 
     /**
@@ -96,6 +125,43 @@ class RequestBodyGenerator extends ParameterGenerates
     {
         return $this->contentType;
     }
+    /**
+     * @param Collection|array $rule
+     * 
+     * @return boolean
+     */
+    protected function isMime($rule)
+    {
+        if (!$rule instanceof Collection) {
+            $rule = $this->collection($rule);
+        }
+
+        return $this->mime($rule)->isNotEmpty();
+    }
+
+    /**
+     * @param Collection|array $fieldRule
+     * 
+     * @return Collection
+     */
+    protected function mime($fieldRule)
+    {
+        if (!$fieldRule instanceof Collection) {
+            $fieldRule = $this->collection($fieldRule);
+        }
+
+        return $fieldRule->filter(function ($value) {
+            if (is_object($value)) {
+                return false;
+            }
+
+            if (is_array($value)) {
+                return $this->mime($this->collection($value))->isNotEmpty();
+            }
+
+            return Str::contains(strtolower($value), ["file", "image", "mimetypes", "mimes"]);
+        });
+    }
 
     /**
      * @return array
@@ -103,287 +169,116 @@ class RequestBodyGenerator extends ParameterGenerates
     public function getParameters()
     {
         $required = [];
+
         $properties = [];
 
-        $requestBody = [
-            'content' => [
-                $this->getContentType() => [
-                    'schema' => [
-                        'type' => 'object',
-                    ],
-                ]
-            ]
-        ];
+        $data = $this->getRules()->transform(function ($rule, $field) {
+            $rule = $this->splitRules($rule);
 
-        collect($this->getRules())->map(function ($fieldRule, $field) use (&$properties, &$required) {
-            $fieldRule = $this->splitRules($fieldRule);
+            $reFieldName = $this->requiredProperties($rule, $field);
 
-            $this->addToProperties($field, $fieldRule, $properties);
+            $required = [
+                'isRequired'    => $this->isPropertyRequired($reFieldName),
+                'field'         => $reFieldName,
+            ];
 
-            $required[] = $this->requiredProperties($fieldRule, $field);
+            $properties = $this->properties($field, $rule);
+
+            return compact('required') + $properties;
         });
+
+        if ($data->isNotEmpty()) {
+            // get required tag.
+            $required = $data->filter(function ($item) {
+                return isset($item['required']) && $item['required']['isRequired'];
+            })->keys()->toArray();
+
+            // properties remove required key
+            $properties = $data->reduce(function ($carry, $item) {
+                $carry = $carry ? $carry : [];
+
+                // Remove the required tag.
+                unset($item['required']);
+
+                // If the fields are points.*.x and points.*.y, then merge them and remove duplicates.
+                return array_merge_distinct_recursive($carry, $item);
+            });
+        }
+
+        // If the controller method includes request.body, merge it with the current properties and remove duplicates.
+        if ($docRequestBody = $this->getDocRequestBody()) {
+            $properties = $docRequestBody->mergeRecursiveDistinct($properties)->toArray();
+        }
+
+        $schema = [
+            'type'  => 'object',
+        ] + compact('properties');
 
         if (!empty($required)) {
-            $required = array_filter($required);
-
-            $requestBody['content'][$this->getContentType()]['schema'] += compact('required');
+            $schema += compact('required');
         }
 
-        $requestBody['content'][$this->getContentType()]['schema'] += compact('properties');
-
-        return compact('requestBody');
-    }
-
-    /**
-     * @param string $field
-     * @param array $fieldRule
-     * @param array &$properties
-     */
-    protected function addToProperties(string $field, array $fieldRule, array &$properties)
-    {
-        if ($this->getContentType() === 'multipart/form-data') {
-            $this->addToPropertiesWithFormData($field, $fieldRule, $properties);
-        } else {
-            $this->addToPropertiesWithJson(explode('.', $field), $fieldRule, $properties, $field);
-        }
-    }
-
-    /**
-     * @param array $fieldRule
-     * @param string $field
-     * 
-     * @return string|[]
-     */
-    protected function requiredProperties(array $fieldRule, string $field)
-    {
-        if ($this->isParamRequired($fieldRule)) {
-            if ($this->getContentType() === 'multipart/form-data') {
-                $type = $this->getParamType($fieldRule);
-
-                $field = $this->propertiesFieldReName($field, $type);
-            }
-
-            return $field;
-        }
-    }
-
-    /**
-     * For Content-Type: Application/json
-     * 
-     * @param array $field
-     * @param array $fieldRule
-     * @param array &$properties
-     */
-    protected function addToPropertiesWithJson(array $fields, array $fieldRule, array &$properties = null, string $originFieldName = "")
-    {
-        $field = array_shift($fields);
-
-        $type = !empty($fields) ? (current($fields) === '*' ? 'array' : 'object') : $this->getParamType($fieldRule);
-
-        if (!isset($properties[$field])) {
-            $properties[$field] = $this->getNewPropObj($type, $fieldRule);
-        } else {
-            //overwrite previous type in case it wasn't given before
-            $properties[$field]['type'] = $type;
-        }
-
-        $items = $this->itemsNextCheck($fields, $this->getParamType($fieldRule), $originFieldName);
-
-        if (!empty($items)) {
-            if (!empty($fields))
-                $properties[$field] += $items;
-            else {
-                $properties[$field] = $items;
-            }
-        }
-
-        !in_array($type, ['array', 'object']) && $properties[$field] += $this->getDocRulesByKey($originFieldName);
-
-        if (empty($fields)) {
-            return;
-        }
-
-        if (current($fields) !== '*') {
-            if ($hasItems = $type === 'array') {
-                !isset($properties[$field]['items']['properties']) && $properties[$field]['items'] = $this->getNewPropObj('object', $fieldRule);
-            }
-
-            $type = 'object';
-        }
-
-        if ($type === 'array') {
-            $this->addToPropertiesWithJson($fields, $fieldRule, $properties[$field]['items'], $originFieldName);
-        } elseif ($type === 'object') {
-            if (isset($hasItems) && $hasItems) {
-                $this->addToPropertiesWithJson($fields, $fieldRule, $properties[$field]['items']['properties'], $originFieldName);
-            } else {
-                $this->addToPropertiesWithJson($fields, $fieldRule, $properties[$field]['properties'], $originFieldName);
-            }
-        }
-    }
-
-    /**
-     * @param array &$fields
-     * @param string $type
-     * @param string originFieldName
-     * @param array $items
-     * 
-     * @return array
-     */
-    protected function itemsNextCheck(array &$fields, string $type, string $originFieldName, array $items = [])
-    {
-        if (current($fields) === '*') {
-            array_shift($fields);
-
-            $items = [
-                'type'  => 'array',
-                'items' => empty($fields) ?
-                    compact('type') + $this->getDocRulesByKey($originFieldName) :
-                    $this->itemsNextCheck($fields, $type, $originFieldName)
-            ];
-        }
-
-        return $items;
-    }
-
-    /**
-     * For Content-Type: multipart/form-data
-     * 
-     * @param string $field
-     * @param array $fieldRule
-     * @param array &$properties
-     */
-    protected function addToPropertiesWithFormData(string $field, array $fieldRule, array &$properties)
-    {
-        $type = !empty($this->mimeMethodCheck($fieldRule)) ? [
-            'type'      => 'string',
-            'format'    => 'binary'
-        ] : ['type' => $this->getParamType($fieldRule)];
-
-        $enum = $this->getEnumValues($fieldRule);
-
-        !empty($enum) && $type += compact('enum');
-
-        $newField = $this->propertiesFieldReName($field, $type['type']);
-
-        if ($type['type'] === 'array') {
-            $properties += [
-                $newField => [
-                    'type'  => 'array',
-                    'items' => $type
-                ]
-            ];
-        } else {
-            $properties += [
-                $newField => $type
-            ];
-
-            if ($rules = $this->getDocRulesByKey($field)) {
-                $properties[$newField] += $rules;
-            }
-        }
-    }
-
-    /**
-     * @param string $type
-     * @param array $fieldRule
-     * 
-     * @return array
-     */
-    protected function getNewPropObj(string $type, array $fieldRule)
-    {
-        $propObj = [
-            'type' => $type,
+        return [
+            'content' => [
+                $this->getContentType() => compact('schema')
+            ]
         ];
-
-        if ($enums = $this->getEnumValues($fieldRule)) {
-            $propObj['enum'] = $enums;
-        }
-
-        if ($type === 'array') {
-            $propObj['items'] = [];
-        } elseif ($type === 'object') {
-            $propObj['properties'] = [];
-        }
-
-        return $propObj;
     }
 
     /**
      * @param string $field
-     * @param string $type
-     * 
-     * @return string
-     */
-    protected function propertiesFieldReName(string $field, string $type)
-    {
-        $field = $this->fieldReName($field);
-
-        $type === 'array' && $field = Str::finish($field, '[');
-
-        if ($type === 'array' || Str::contains($field, '.'))
-            $field = Str::finish($this->fieldReName($field, '.', '['), ']');
-
-        return $field;
-    }
-
-    /**
-     * @param array $fieldRule
-     * 
-     * @return boolean
-     */
-    protected function mimeMethodCheck(array $fieldRule)
-    {
-        $fieldRule = $this->mime($fieldRule);
-
-        if (!empty($fieldRule)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * @param array $fieldRule
+     * @param array|Collection $rule
      * 
      * @return array
      */
-    protected function mime(array $fieldRule)
+    protected function properties(string $fields, $rule)
     {
-        return Arr::where($fieldRule, function ($value) {
-            if (is_object($value)) return;
-            if (is_array($value)) return $this->mime($value);
-            return Str::contains(strtolower($value), ["file", "image", "mimetypes", "mimes"]);
-        });
-    }
+        $segments = explode('.', $fields);
 
-    /**
-     * @param array $fields
-     * @param string $needles
-     * @param string $replace
-     * 
-     * @return array
-     */
-    protected function fieldsReName(array $fields, string $needles = ".*", string $replace = '[]')
-    {
-        return collect($fields)->transform(
-            fn ($fieldName) => $this->fieldReName($fieldName, $needles, $replace)
-        )->toArray();
-    }
+        $result = [];
 
-    /**
-     * @param string $fieldName
-     * @param string $needles
-     * @param string $replace
-     * 
-     * @return string
-     */
-    protected function fieldReName(string $fieldName, string $needles = ".*", string $replace = '[]')
-    {
-        if (Str::contains(strtolower($fieldName), $needles)) {
-            $fieldName = (string) Str::of($fieldName)->replace($needles, $replace);
+        $current = &$result;
+
+        $rule = $rule instanceof \WIlkques\OpenAPI\Helpers\Collection ? $rule->toArray() : $rule;
+
+        foreach ($segments as $field) {
+            // Next element
+            $next = next($segments);
+
+            if ($next === '*' or in_array('array', $rule)) {
+                $type = 'array';
+            } else if (!$next) {
+                $type = $this->getParamType($rule);
+            } else {
+                $type = 'object';
+            }
+
+            $current = $this->getNewPropObj($type, $rule, !$next);
+
+            if ($field !== '*') {
+                $current = [$field => $current];
+
+                $current = &$current[$field];
+            }
+
+            if ($type === 'array') {
+                // If the field name is like abc.*.* or the field name is like abc and the rule is array. 
+                // and there is no next element, then the items default type for the element is string.
+                if (!$next) {
+                    $current['items'] = [
+                        'type' => 'string'
+                    ];
+                }
+
+                $current = &$current['items'];
+            } else if ($type === 'object') {
+                $current = &$current['properties'];
+            }
         }
 
-        return $fieldName;
+        // comment doc and merge rules comment
+        $current = $this->getDocRulesByKey($fields)->mergeRecursiveDistinct($current)->toArray();
+
+        return $result;
     }
 }

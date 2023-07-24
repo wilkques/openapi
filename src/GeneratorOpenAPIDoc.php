@@ -12,8 +12,10 @@ class GeneratorOpenAPIDoc
 {
     /** @var Generator */
     private $generator;
+
     /** @var FormatterManager */
     private $formatterManager;
+
     /** @var array */
     private $setMethods = [
         'format'
@@ -22,7 +24,7 @@ class GeneratorOpenAPIDoc
     /**
      * @param Generator|null $generator
      */
-    public function __construct(Generator $generator = null)
+    public function __construct($generator = null)
     {
         $this->setGenerator($generator);
     }
@@ -81,7 +83,7 @@ class GeneratorOpenAPIDoc
             $this->setFormat($extension);
         } else {
             $filename = "apidoc";
-    
+
             $extension = null;
 
             $dir = $file;
@@ -95,7 +97,7 @@ class GeneratorOpenAPIDoc
      * 
      * @return static
      */
-    public function setGenerator(?Generator $generator)
+    public function setGenerator($generator)
     {
         $this->generator = $generator;
 
@@ -115,7 +117,7 @@ class GeneratorOpenAPIDoc
      */
     public function getGenerate()
     {
-        return $this->getGenerator()->generate();
+        return $this->getGenerator()->handle();
     }
 
     /**
@@ -146,6 +148,12 @@ class GeneratorOpenAPIDoc
         return new FormatterManager;
     }
 
+    /**
+     * @param string $method
+     * @param array $arguments
+     * 
+     * @return mixed|static
+     */
     public function __call(string $method, array $arguments)
     {
         in_array($method, $this->setMethods) && $method = sprintf("set%s", ucfirst(trim($method)));
@@ -155,6 +163,12 @@ class GeneratorOpenAPIDoc
         return $instance->setGeneratorSwaggerDoc($this)->$method(...$arguments);
     }
 
+    /**
+     * @param string $method
+     * @param array $arguments
+     * 
+     * @return static
+     */
     public static function __callStatic(string $method, array $arguments)
     {
         return (new static)->$method(...$arguments);

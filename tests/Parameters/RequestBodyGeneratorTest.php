@@ -6,9 +6,12 @@ use Illuminate\Validation\Rule;
 use Wilkques\OpenAPI\Parameters\RequestBodyGenerator;
 use Wilkques\OpenAPI\Tests\Stubs\Rules\Uppercase as UppercaseRule;
 use Wilkques\OpenAPI\Tests\TestCase;
+use Wilkques\OpenAPI\Traits\CollectionTrait;
 
 class RequestBodyGeneratorTest extends TestCase
 {
+    use CollectionTrait;
+
     public function testStructure()
     {
         $requestBody = $this->getBodyParameters([]);
@@ -243,15 +246,15 @@ class RequestBodyGeneratorTest extends TestCase
     public function testIgnoresClosureRules()
     {
         $requestBody = $this->getBodyParameters([
-            'name' => [
-                'string',
-                function ($attribute, $value, $fail) {
-                    if ($value === 'foo') {
-                        $fail($attribute . ' is invalid.');
-                    }
-                },
-            ],
-        ]);
+                'name' => [
+                    'string',
+                    function ($attribute, $value, $fail) {
+                        if ($value === 'foo') {
+                            $fail($attribute . ' is invalid.');
+                        }
+                    },
+                ],
+            ]);
 
         $this->assertEquals([
             'name' => [
@@ -260,10 +263,15 @@ class RequestBodyGeneratorTest extends TestCase
         ], $requestBody['content']['application/json']['schema']['properties']);
     }
 
-    private function getBodyParameters(array $rules)
+    private function getBodyParameters(array $rules, array $docRules = [], array $docRequestBody = [])
     {
-        $requestBody = (new RequestBodyGenerator($rules))->getParameters();
+        $requestBody = (new RequestBodyGenerator(
+            $this->collection($rules), 
+            $this->collection($docRules), 
+            $this->collection($docRequestBody)
+            ))->getParameters();
 
-        return current($requestBody);
+        // return current($requestBody);
+        return $requestBody;
     }
 }

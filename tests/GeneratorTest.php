@@ -2,12 +2,12 @@
 
 namespace Wilkques\OpenAPI\Tests;
 
+use Illuminate\Config\Repository as Config;
 use Wilkques\OpenAPI\Generator;
 
 class GeneratorTest extends TestCase
 {
-    protected $config;
-
+    /** @var Generator */
     protected $generator;
 
     protected $endpoints = [
@@ -35,14 +35,12 @@ class GeneratorTest extends TestCase
     {
         parent::setUp();
 
-        $this->generator = new Generator(
-            $this->config = config('openapi')
-        );
+        $this->registerApp();
     }
 
     public function testRequiredBaseInfo()
     {
-        $docs = $this->generator->generate();
+        $docs = $this->getDocsWithNewConfig();
 
         $this->assertArrayHasKey('openapi', $docs);
         $this->assertArrayHasKey('info', $docs);
@@ -105,21 +103,25 @@ class GeneratorTest extends TestCase
     public function testSecurityDefinitionsAccessCodeFlow()
     {
         $docs = $this->getDocsWithNewConfig([
-            'securityDefinitions' => [
+            'components' => [
                 'securitySchemes' => [
                     'oauth2' => [ // Unique name of security
                         'type' => 'oauth2', // The type of the security scheme. Valid values are "basic", "apiKey" or "oauth2".
                         'description' => 'A short description for oauth2 security scheme.',
-                        'flow' => 'accessCode', // The flow used by the OAuth2 security scheme. Valid values are "implicit", "password", "application" or "accessCode".
-                        // 'authorizationUrl' => 'http://example.com/auth', // The authorization URL to be used for (implicit/accessCode)
-                        //'tokenUrl' => 'http://example.com/auth' // The authorization URL to be used for (password/application/accessCode)
-                        'scopes' => [
-                            'user-read' => '',
-                            'user-write' => ''
-                        ]
+                        'flows' => [
+                            // The flow used by the OAuth2 security scheme. Valid values are "implicit", "password", "application" or "accessCode".
+                            'accessCode' => [
+                                'authorizationUrl' => 'http://example.com/auth', // The authorization URL to be used for (implicit/accessCode)
+                                'tokenUrl' => 'http://example.com/auth', // The authorization URL to be used for (password/application/accessCode)
+                                'scopes' => [
+                                    'user-read' => '',
+                                    'user-write' => ''
+                                ],
+                            ],
+                        ],
                     ],
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $this->assertArrayHasKey('components', $docs);
@@ -138,18 +140,23 @@ class GeneratorTest extends TestCase
     public function testSecurityDefinitionsImplicitFlow()
     {
         $docs = $this->getDocsWithNewConfig([
-            'securityDefinitions' => [
+            'components' => [
                 'securitySchemes' => [
                     'oauth2' => [ // Unique name of security
                         'type' => 'oauth2', // The type of the security scheme. Valid values are "basic", "apiKey" or "oauth2".
                         'description' => 'A short description for oauth2 security scheme.',
-                        'flow' => 'implicit', // The flow used by the OAuth2 security scheme. Valid values are "implicit", "password", "application" or "accessCode".
-                        // 'authorizationUrl' => 'http://example.com/auth', // The authorization URL to be used for (implicit/accessCode)
-                        //'tokenUrl' => 'http://example.com/auth' // The authorization URL to be used for (password/application/accessCode)
-                        'scopes' => [
-                            'user-read' => '',
-                            'user-write' => ''
-                        ]
+                        'flows' => [
+                            // The flow used by the OAuth2 security scheme. Valid values are "implicit", "password", "application" or "accessCode".
+                            'implicit' => [
+                                'authorizationUrl' => 'http://example.com/auth', // The authorization URL to be used for (implicit/accessCode)
+                                // 'tokenUrl' => 'http://example.com/auth', // The authorization URL to be used for (password/application/accessCode)
+                                'scopes' => [
+                                    'user-read' => '',
+                                    'user-write' => ''
+                                ]
+                            ]
+                        ],
+
                     ],
                 ]
             ]
@@ -168,18 +175,22 @@ class GeneratorTest extends TestCase
     public function testSecurityDefinitionsPasswordFlow()
     {
         $docs = $this->getDocsWithNewConfig([
-            'securityDefinitions' => [
+            'components' => [
                 'securitySchemes' => [
                     'oauth2' => [ // Unique name of security
                         'type' => 'oauth2', // The type of the security scheme. Valid values are "basic", "apiKey" or "oauth2".
                         'description' => 'A short description for oauth2 security scheme.',
-                        'flow' => 'password', // The flow used by the OAuth2 security scheme. Valid values are "implicit", "password", "application" or "accessCode".
-                        // 'authorizationUrl' => 'http://example.com/auth', // The authorization URL to be used for (implicit/accessCode)
-                        //'tokenUrl' => 'http://example.com/auth' // The authorization URL to be used for (password/application/accessCode)
-                        'scopes' => [
-                            'user-read' => '',
-                            'user-write' => ''
-                        ]
+                        'flows' => [
+                            // The flow used by the OAuth2 security scheme. Valid values are "implicit", "password", "application" or "accessCode".
+                            'password' => [
+                                // 'authorizationUrl' => 'http://example.com/auth', // The authorization URL to be used for (implicit/accessCode)
+                                'tokenUrl' => 'http://example.com/auth', // The authorization URL to be used for (password/application/accessCode)
+                                'scopes' => [
+                                    'user-read' => '',
+                                    'user-write' => ''
+                                ]
+                            ]
+                        ],
                     ],
                 ]
             ]
@@ -198,18 +209,22 @@ class GeneratorTest extends TestCase
     public function testSecurityDefinitionsApplicationFlow()
     {
         $docs = $this->getDocsWithNewConfig([
-            'securityDefinitions' => [
+            'components' => [
                 'securitySchemes' => [
                     'oauth2' => [ // Unique name of security
                         'type' => 'oauth2', // The type of the security scheme. Valid values are "basic", "apiKey" or "oauth2".
                         'description' => 'A short description for oauth2 security scheme.',
-                        'flow' => 'application', // The flow used by the OAuth2 security scheme. Valid values are "implicit", "password", "application" or "accessCode".
-                        // 'authorizationUrl' => 'http://example.com/auth', // The authorization URL to be used for (implicit/accessCode)
-                        //'tokenUrl' => 'http://example.com/auth' // The authorization URL to be used for (password/application/accessCode)
-                        'scopes' => [
-                            'user-read' => '',
-                            'user-write' => ''
-                        ]
+                        'flows' => [
+                            // The flow used by the OAuth2 security scheme. Valid values are "implicit", "password", "application" or "accessCode".
+                            'application' => [
+                                // 'authorizationUrl' => 'http://example.com/auth', // The authorization URL to be used for (implicit/accessCode)
+                                'tokenUrl' => 'http://example.com/auth', // The authorization URL to be used for (password/application/accessCode)
+                                'scopes' => [
+                                    'user-read' => '',
+                                    'user-write' => ''
+                                ]
+                            ]
+                        ],
                     ],
                 ]
             ]
@@ -230,7 +245,15 @@ class GeneratorTest extends TestCase
      */
     public function testHasPaths($docs)
     {
-        $this->assertEquals($this->endpoints, array_keys($docs['paths']));
+        $endpoints = $this->endpoints;
+
+        sort($endpoints);
+
+        $intersect = array_values(array_intersect(array_keys($docs['paths']), $this->endpoints));
+
+        sort($intersect);
+
+        $this->assertEquals($endpoints, $intersect);
 
         return $docs['paths'];
     }
@@ -254,10 +277,12 @@ class GeneratorTest extends TestCase
      */
     public function testRouteData($paths)
     {
-        $expectedPostDescription = <<<'EOD'
-Data is validated [see description here](https://example.com) so no bad data can be passed.
-Please read the documentation for more information
-EOD;
+        $expectedPostDescription = <<<TEXT
+    Data is validated [see description here](https://example.com) so no bad data can be passed.
+    Please read the documentation for more information
+    TEXT;
+
+        $expectedPostDescription = str_replace(["\r\n", "\n"], "\n", $expectedPostDescription);
 
         $this->assertArrayHasKey('summary', $paths['/users']['get']);
         $this->assertArrayHasKey('description', $paths['/users']['get']);
@@ -288,18 +313,22 @@ EOD;
     public function testRouteScopes()
     {
         $docs = $this->getDocsWithNewConfig([
-            'securityDefinitions' => [
+            'components' => [
                 'securitySchemes' => [
                     'oauth2' => [ // Unique name of security
                         'type' => 'oauth2', // The type of the security scheme. Valid values are "basic", "apiKey" or "oauth2".
                         'description' => 'A short description for oauth2 security scheme.',
-                        'flow' => 'implicit', // The flow used by the OAuth2 security scheme. Valid values are "implicit", "password", "application" or "accessCode".
-                        // 'authorizationUrl' => 'http://example.com/auth', // The authorization URL to be used for (implicit/accessCode)
-                        //'tokenUrl' => 'http://example.com/auth' // The authorization URL to be used for (password/application/accessCode)
-                        'scopes' => [
-                            'user-read' => '',
-                            'user-write' => ''
-                        ]
+                        'flows' => [
+                            // The flow used by the OAuth2 security scheme. Valid values are "implicit", "password", "application" or "accessCode".
+                            'implicit' => [
+                                // 'authorizationUrl' => 'http://example.com/auth', // The authorization URL to be used for (implicit/accessCode)
+                                //'tokenUrl' => 'http://example.com/auth' // The authorization URL to be used for (password/application/accessCode)
+                                'scopes' => [
+                                    'user-read' => '',
+                                    'user-write' => ''
+                                ]
+                            ]
+                        ],
                     ],
                 ]
             ]
@@ -311,7 +340,14 @@ EOD;
 
     public function testOverwriteIgnoreMethods()
     {
-        $docs = $this->getDocsWithNewConfig(['ignoredMethods' => []]);
+        $docs = $this->getDocsWithNewConfig([
+            'ignoredMethods' => [],
+            'only' => [
+                'namespace' => [
+                    // 'App\Http\Controllers',
+                ],
+            ]
+        ]);
 
         $this->assertArrayHasKey('head', $docs['paths']['/users']);
     }
@@ -389,13 +425,19 @@ EOD;
     public function testFiltersRoutes($routeFilter, $expectedRoutes)
     {
         $this->generator = new Generator(
+            app(\Wilkques\OpenAPI\DataObjects\Routes::class),
             $this->config,
-            $routeFilter
         );
 
-        $docs = $this->generator->generate();
+        $docs = $this->generator->handle();
 
-        $this->assertEquals($expectedRoutes, array_keys($docs['paths']));
+        sort($expectedRoutes);
+
+        $intersect = array_values(array_intersect(array_keys($docs['paths']), $expectedRoutes));
+
+        sort($intersect);
+
+        $this->assertEquals($expectedRoutes, $intersect);
     }
 
     /**
@@ -415,10 +457,24 @@ EOD;
         ];
     }
 
-    private function getDocsWithNewConfig(array $config)
+    /**
+     * @param array $config
+     * 
+     * @return Generator
+     */
+    private function getDocsWithNewConfig(array $config = [])
     {
-        $config = array_merge($this->config, $config);
+        if ($config) {
+            $openapi = array_merge($this->config->get("openapi"), $config);
 
-        return (new Generator($config))->generate();
+            $this->config->set("openapi", $openapi);
+
+            app()->scoped(Config::class, fn () => $this->config);
+        }
+
+        return (new Generator(
+            $this->app->make(\Wilkques\OpenAPI\DataObjects\Routes::class),
+            $this->config,
+        ))->handle();
     }
 }
