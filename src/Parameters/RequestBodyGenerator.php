@@ -19,6 +19,9 @@ class RequestBodyGenerator extends ParameterGenerates
     /** @var string */
     protected $contentType = 'application/json';
 
+    /** @var bool */
+    protected $isMime = false;
+
     public function __construct(Collection $rules, Collection $docRules = null, Collection $docRequestBody = null)
     {
         $this->setRules($rules)->setDocRules($docRules)->setDocRequestBody($docRequestBody)->init();
@@ -30,6 +33,8 @@ class RequestBodyGenerator extends ParameterGenerates
     public function init()
     {
         if ($this->isMime($this->getRules())) {
+            $this->isMime = true;
+
             $this->setContentType('multipart/form-data');
         }
 
@@ -125,6 +130,7 @@ class RequestBodyGenerator extends ParameterGenerates
     {
         return $this->contentType;
     }
+
     /**
      * @param Collection|array $rule
      * 
@@ -164,25 +170,53 @@ class RequestBodyGenerator extends ParameterGenerates
     }
 
     /**
+     * @param string $field
+     * 
+     * @return string
+     */
+    protected function propertiesFieldReName(string $field)
+    {
+        $field = $this->fieldReName($field);
+
+        if (Str::contains($field, '.')) {
+            $field = Str::finish($this->fieldReName($field, '.', '['), ']');
+        }
+
+        return $field;
+    }
+
+    /**
      * @return array
      */
     public function getParameters()
     {
+        $request = $this->getDocRequestBody();
+
+        // If the key name "replace" exists, return the request body doc.
+        if ($request->takeOffRecursive('replace', false)) {
+            return $request->toArray();
+        }
+
         $required = [];
 
         $properties = [];
 
         $data = $this->getRules()->transform(function ($rule, $field) {
+            // split Rules
             $rule = $this->splitRules($rule);
 
-            $reFieldName = $this->requiredProperties($rule, $field);
+            // Get whether the property field is required.
+            $requiredFieldName = $this->requiredProperties($rule, $field);
 
             $required = [
-                'isRequired'    => $this->isPropertyRequired($reFieldName),
-                'field'         => $reFieldName,
+                // Check if the property is required.
+                'isRequired'    => $this->isPropertyRequired($requiredFieldName),
+                // Reorganize the names of the required fields.
+                'field'         => $field = $this->required($field),
             ];
 
-            $properties = $this->properties($field, $rule);
+            // Generator parameters
+            $properties = $this->parameters($field, $rule);
 
             return compact('required') + $properties;
         });
@@ -191,7 +225,7 @@ class RequestBodyGenerator extends ParameterGenerates
             // get required tag.
             $required = $data->filter(function ($item) {
                 return isset($item['required']) && $item['required']['isRequired'];
-            })->keys()->toArray();
+            })->pluck('required.field')->unique()->values()->toArray();
 
             // properties remove required key
             $properties = $data->reduce(function ($carry, $item) {
@@ -205,80 +239,35 @@ class RequestBodyGenerator extends ParameterGenerates
             });
         }
 
-        // If the controller method includes request.body, merge it with the current properties and remove duplicates.
-        if ($docRequestBody = $this->getDocRequestBody()) {
-            $properties = $docRequestBody->mergeRecursiveDistinct($properties)->toArray();
-        }
-
-        $schema = [
+        $schema = array_merge([
             'type'  => 'object',
-        ] + compact('properties');
+        ], compact('properties'));
 
         if (!empty($required)) {
-            $schema += compact('required');
+            $schema = array_merge($schema, compact('required'));
         }
 
-        return [
+        // If the controller method includes request.body, merge it with the current properties and remove duplicates.
+        return $request->mergeRecursiveDistinct([
             'content' => [
                 $this->getContentType() => compact('schema')
             ]
-        ];
+        ])->toArray();
     }
 
     /**
-     * @param string $field
-     * @param array|Collection $rule
+     * Reorganize the names of the required fields.
      * 
-     * @return array
+     * @param string $field
+     * 
+     * @return string
      */
-    protected function properties(string $fields, $rule)
+    protected function required($field)
     {
-        $segments = explode('.', $fields);
-
-        $result = [];
-
-        $current = &$result;
-
-        $rule = $rule instanceof \WIlkques\OpenAPI\Helpers\Collection ? $rule->toArray() : $rule;
-
-        foreach ($segments as $field) {
-            // Next element
-            $next = next($segments);
-
-            if ($next === '*' or in_array('array', $rule)) {
-                $type = 'array';
-            } else if (!$next) {
-                $type = $this->getParamType($rule);
-            } else {
-                $type = 'object';
-            }
-
-            $current = $this->getNewPropObj($type, $rule, !$next);
-
-            if ($field !== '*') {
-                $current = [$field => $current];
-
-                $current = &$current[$field];
-            }
-
-            if ($type === 'array') {
-                // If the field name is like abc.*.* or the field name is like abc and the rule is array. 
-                // and there is no next element, then the items default type for the element is string.
-                if (!$next) {
-                    $current['items'] = [
-                        'type' => 'string'
-                    ];
-                }
-
-                $current = &$current['items'];
-            } else if ($type === 'object') {
-                $current = &$current['properties'];
-            }
+        if ($this->isMime) {
+            return $this->propertiesFieldReName($field);
         }
 
-        // comment doc and merge rules comment
-        $current = $this->getDocRulesByKey($fields)->mergeRecursiveDistinct($current)->toArray();
-
-        return $result;
+        return $this->getFirstField($field);
     }
 }

@@ -135,19 +135,22 @@ Or custom Request
  *              }
  *          }
  *      ],
- *      "body": {
- *          "multipart/form-data": {
- *              "schema": {
- *                  "type": "object",
- *                  "required": ["file"],
- *                  "properties": {
- *                      "file":{
- *                          "type": "string",
- *                          "format": "binary",   
- *                          "description": "file upload" 
- *                      },
- *                      "content":{
- *                          "type": "string"
+ *      "requestBody": {
+ *          "replace": true, // If replace is true, then directly replace all parameters instead of merging.
+ *          "content": {
+ *              "multipart/form-data": {
+ *                  "schema": {
+ *                      "type": "object",
+ *                      "required": ["file"],
+ *                      "properties": {
+ *                          "file":{
+ *                              "type": "string",
+ *                              "format": "binary",   
+ *                              "description": "file upload" 
+ *                          },
+ *                          "content":{
+ *                              "type": "string"
+ *                          }
  *                      }
  *                  }
  *              }

@@ -2,7 +2,6 @@
 
 namespace Wilkques\OpenAPI\Parameters;
 
-use Illuminate\Support\Arr;
 use Wilkques\OpenAPI\Helpers\Collection;
 use Wilkques\OpenAPI\Parameters\Contracts\ParameterGenerator;
 

@@ -131,15 +131,15 @@ class Generator
         }
 
         // has request rules
-        if ($rules = $item->get('rules')) {
-            $parameterGenerator = $this->getParameterGenerator($method, $rules, $item->get('query', $this->collection()));
+        $rules = $item->get('rules', $this->collection());
 
-            // check is get query or post requestBody
-            if ($parameterGenerator instanceof QueryParameterGenerator) {
-                $parameters = array_merge_recursive($parameters, $parameterGenerator->getParameters());
-            } else {
-                $requestBody = $parameterGenerator->getParameters();
-            }
+        $parameterGenerator = $this->getParameterGenerator($method, $rules, $request);
+
+        // check is get query or post requestBody
+        if ($parameterGenerator instanceof QueryParameterGenerator) {
+            $parameters = array_merge_recursive($parameters, $parameterGenerator->getParameters());
+        } else {
+            $requestBody = $parameterGenerator->getParameters();
         }
 
         // security tag
@@ -169,21 +169,21 @@ class Generator
     /**
      * @param string $method
      * @param \Illuminate\Support\Collection $rules
-     * @param array|[] $queryOrBody
+     * @param \Illuminate\Support\Collection $requestDoc
      * 
      * @return RequestBodyGenerator|QueryParameterGenerator
      */
-    protected function getParameterGenerator($method, $rules, $queryOrBody = [])
+    protected function getParameterGenerator($method, $rules, $requestDoc)
     {
-        $rule = $rules->get('rules');
+        $rule = $rules->get('rules', $this->collection());
 
-        $fields = $rules->get('fields');
+        $fields = $rules->get('fields', $this->collection());
 
         if (in_array($method, ['post', 'put', 'patch'])) {
-            return new RequestBodyGenerator($rule, $fields, $queryOrBody);
+            return new RequestBodyGenerator($rule, $fields, $requestDoc->get('requestBody'));
         }
 
-        return new QueryParameterGenerator($rule, $fields, $queryOrBody);
+        return new QueryParameterGenerator($rule, $fields, $requestDoc->get('parameters'));
     }
 
     /**

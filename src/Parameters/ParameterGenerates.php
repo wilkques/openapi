@@ -250,7 +250,7 @@ abstract class ParameterGenerates
                 $current = &$current['properties'];
             }
         }
-        
+
         // Merge arrays with comment parsing.
         $current = $this->getDocRulesByKey($fields)->mergeRecursiveDistinct($current)->toArray();
 

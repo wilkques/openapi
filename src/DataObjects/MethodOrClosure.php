@@ -103,14 +103,16 @@ class MethodOrClosure extends DataObjects
 
     public function handle()
     {
+        // building security schema
         return $this->buildBindings($this->getRoute()->getSecurity(), 'security')
+            // building tag deprecated
             ->buildBindingWithParseDoc(fn () => $this->deprecated(), 'deprecated', false)
+            // building tag summary
             ->buildBindingWithParseDoc(fn () => $this->summary(), 'summary')
+            // building tag description
             ->buildBindingWithParseDoc(fn () => $this->description(), 'description')
             // building url path
             ->buildBindingWithParseDoc(fn () => $this->path(), 'path')
-            // building url queries
-            ->buildBindingWithParseDoc(fn () => $this->query(), 'query')
             // building request
             ->buildBindingWithParseDoc(fn () => $this->request(), 'request')
             // building validation request or url
@@ -139,16 +141,6 @@ class MethodOrClosure extends DataObjects
     protected function path()
     {
         return $this->targetDocWithTag($this->getDocBlock(), 'Path');
-    }
-
-    /**
-     * building url queries
-     * 
-     * @return array
-     */
-    protected function query()
-    {
-        return $this->targetDocWithTag($this->getDocBlock(), 'Query');
     }
 
     /**
