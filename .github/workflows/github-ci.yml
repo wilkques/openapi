@@ -26,17 +26,22 @@ jobs:
         ini-values: "post_max_size=256M" #optional
     - name: Check PHP Version
       run: php -v
+      working-directory: /var/www/project
     - name: Copy .env
       run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+      working-directory: /var/www/project
     - name: Install Dependencies
       run: composer install --prefer-dist --no-progress
-    - name: ls
-      run: ls -al
+      working-directory: /var/www/project
     - name: Generate key
       run: php artisan key:generate
+      working-directory: /var/www/project
     - name: Directory Permissions
       run: chmod -R 777 storage bootstrap/cache
+      working-directory: /var/www/project
     - name: Openapi publish
       run: php artisan vendor:publish --provider "Wilkques\OpenAPI\OpenAPIServiceProvider"
+      working-directory: /var/www/project
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       run: vendor/bin/phpunit
+      working-directory: /var/www/project
