@@ -23,7 +23,7 @@ class TestCase extends PHPunitTestCase
 
         $this->getPackageProviders($app);
 
-        $this->config = $app->make('config');
+        $this->config = $app->make(Config::class);
 
         $app->scoped(\phpDocumentor\Reflection\DocBlockFactory::class, function () {
             return \phpDocumentor\Reflection\DocBlockFactory::createInstance();
