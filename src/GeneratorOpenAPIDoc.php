@@ -55,7 +55,7 @@ class GeneratorOpenAPIDoc
     public function filePutCentent(string $dir, string $filename = "apidoc", string $extension = null)
     {
         file_put_contents(
-            sprintf("$dir/$filename.%s", $extension ?: $this->getFormat()),
+            sprintf("{$dir}/{$filename}.%s", $extension ?: $this->getFormat()),
             $this->output()
         );
 
@@ -81,15 +81,15 @@ class GeneratorOpenAPIDoc
             ] = $pathInfo;
 
             $this->setFormat($extension);
-        } else {
-            $filename = "apidoc";
 
-            $extension = null;
-
-            $dir = $file;
+            return $this->mkdir($dir)->filePutCentent($dir, $filename, $extension);
         }
 
-        return $this->mkdir($dir)->filePutCentent($dir, $filename, $extension);
+        $filename = "apidoc";
+
+        $extension = null;
+
+        return $this->mkdir($file)->filePutCentent($file, $filename, $extension);
     }
 
     /**

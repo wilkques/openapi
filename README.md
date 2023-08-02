@@ -136,7 +136,7 @@ Or custom Request
  *          }
  *      ],
  *      "requestBody": {
- *          "replace": true, // If replace is true, then directly replace all parameters instead of merging.
+ *          "custom": only, // If the value of the custom parameter is "only", then display only the custom parameters. If the value is "merge", then merge the custom parameters with the results of the FormRequest. The default value is "only".
  *          "content": {
  *              "multipart/form-data": {
  *                  "schema": {

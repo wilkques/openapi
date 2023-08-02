@@ -192,8 +192,16 @@ class RequestBodyGenerator extends ParameterGenerates
     {
         $request = $this->getDocRequestBody();
 
-        // If the key name "replace" exists, return the request body doc.
-        if ($request->takeOffRecursive('replace', false)) {
+        if ($request->has('custom')) {
+            // If the value of the custom parameter is "only", then display only the custom parameters.
+            // If the value is "merge", then merge the custom parameters with the results of the FormRequest.
+            // The default value is "only".
+            if (!is_string($request->get('custom')) or !in_array($request->get('custom'), ['only', 'merge'])) {
+                throw new \InvalidArgumentException('The value of the custom parameter can only be "only" or "merge".');
+            }
+        }
+
+        if ('only' === $request->takeOffRecursive('custom', 'only')) {
             return $request->toArray();
         }
 
