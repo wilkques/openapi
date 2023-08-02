@@ -2,7 +2,6 @@
 
 namespace Wilkques\OpenAPI\Tests;
 
-use Illuminate\Config\Repository as Config;
 use Wilkques\OpenAPI\Generator;
 
 class GeneratorTest extends TestCase
@@ -469,7 +468,7 @@ class GeneratorTest extends TestCase
 
             $this->config->set("openapi", $openapi);
 
-            app()->scoped(Config::class, fn () => $this->config);
+            app()->scoped(\Illuminate\Config\Repository::class, fn () => $this->config);
         }
 
         return (new Generator(
