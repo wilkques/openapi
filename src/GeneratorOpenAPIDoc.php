@@ -2,6 +2,8 @@
 
 namespace Wilkques\OpenAPI;
 
+use Illuminate\Support\Str;
+
 /**
  * @method static format(string $format)
  * @method static generator(Generator $generator)
@@ -46,18 +48,13 @@ class GeneratorOpenAPIDoc
     }
 
     /**
-     * @param string $dir
-     * @param string $filename
-     * @param string|null $extension
+     * @param string $filePath
      * 
      * @return static
      */
-    public function filePutCentent(string $dir, string $filename = "apidoc", string $extension = null)
+    public function filePutCentent(string $filePath)
     {
-        file_put_contents(
-            sprintf("{$dir}/{$filename}.%s", $extension ?: $this->getFormat()),
-            $this->output()
-        );
+        file_put_contents($filePath, $this->output());
 
         return $this;
     }
@@ -67,29 +64,16 @@ class GeneratorOpenAPIDoc
      * 
      * @return static
      */
-    public function outputDoc(string $file)
+    public function outputDoc(string $filePath)
     {
-        if (!$file) return;
+        [
+            'dirname'   => $dir,
+            'extension' => $extension,
+        ] = pathinfo($filePath);
 
-        $pathInfo = pathinfo($file);
+        $this->setFormat($extension);
 
-        if (is_array($pathInfo) && array_key_exists('extension', $pathInfo)) {
-            [
-                'dirname'   => $dir,
-                'extension' => $extension,
-                'filename'  => $filename
-            ] = $pathInfo;
-
-            $this->setFormat($extension);
-
-            return $this->mkdir($dir)->filePutCentent($dir, $filename, $extension);
-        }
-
-        $filename = "apidoc";
-
-        $extension = null;
-
-        return $this->mkdir($file)->filePutCentent($file, $filename, $extension);
+        return $this->mkdir($dir)->filePutCentent($filePath);
     }
 
     /**
@@ -110,14 +94,6 @@ class GeneratorOpenAPIDoc
     public function getGenerator()
     {
         return $this->generator;
-    }
-
-    /**
-     * @return string
-     */
-    public function getGenerate()
-    {
-        return $this->getGenerator()->handle();
     }
 
     /**

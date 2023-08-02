@@ -43,7 +43,11 @@ return [
 
     ],
 
-    'storage' => storage_path('api-docs'),
+    'storage'   => storage_path('api-docs'),
+
+    'filenmae'  => 'apidoc',
+
+    'extension'  => 'json',
 
     /*
     |--------------------------------------------------------------------------

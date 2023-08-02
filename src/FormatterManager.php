@@ -67,13 +67,14 @@ class FormatterManager
     {
         switch ($this->getFormat()) {
             case "json":
-                $this->formatter = new Formatters\JsonFormatter($this->getGenerate());
+                $this->formatter = new Formatters\JsonFormatter($this->getGenerator());
                 break;
+            case "yml":
             case "yaml":
-                $this->formatter = new Formatters\YamlFormatter($this->getGenerate());
+                $this->formatter = new Formatters\YamlFormatter($this->getGenerator());
                 break;
             default:
-                throw new \Wilkques\OpenAPI\Exceptions\OpenAPIException('Invalid format passed');
+                throw new \InvalidArgumentException('Invalid format passed');
                 break;
         }
 
