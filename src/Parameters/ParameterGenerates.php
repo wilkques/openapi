@@ -216,6 +216,8 @@ abstract class ParameterGenerates
 
         $current = &$result;
 
+        $rule = $rule instanceof \WIlkques\OpenAPI\Helpers\Collection ? $rule->toArray() : $rule;
+
         foreach ($segments as $field) {
             // Next element
             $next = next($segments);

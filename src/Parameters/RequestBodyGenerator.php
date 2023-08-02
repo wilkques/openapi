@@ -212,7 +212,7 @@ class RequestBodyGenerator extends ParameterGenerates
                 // Check if the property is required.
                 'isRequired'    => $this->isPropertyRequired($requiredFieldName),
                 // Reorganize the names of the required fields.
-                'field'         => $field = $this->required($field),
+                'field'         => $this->required($field),
             ];
 
             // Generator parameters
@@ -264,9 +264,9 @@ class RequestBodyGenerator extends ParameterGenerates
      */
     protected function required($field)
     {
-        if ($this->isMime) {
-            return $this->propertiesFieldReName($field);
-        }
+        // if ($this->isMime) {
+        //     return $this->propertiesFieldReName($field);
+        // }
 
         return $this->getFirstField($field);
     }

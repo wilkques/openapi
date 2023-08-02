@@ -288,7 +288,7 @@ class GeneratorTest extends TestCase
         $this->assertArrayHasKey('description', $paths['/users']['get']);
         $this->assertArrayHasKey('responses', $paths['/users']['get']);
         $this->assertArrayHasKey('deprecated', $paths['/users']['get']);
-        $this->assertArrayNotHasKey('parameters', $paths['/users']['get']);
+        $this->assertArrayHasKey('parameters', $paths['/users']['get']);
 
         $this->assertEquals('Get a list of of users in the application', $paths['/users']['get']['summary']);
         $this->assertEquals(false, $paths['/users']['get']['deprecated']);
