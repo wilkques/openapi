@@ -3,7 +3,6 @@
 namespace Wilkques\OpenAPI\Tests;
 
 use Illuminate\Config\Repository as Config;
-use Tests\CreatesApplication;
 use Laravel\Passport\Passport;
 use PHPUnit\Framework\TestCase as PHPunitTestCase;
 use Wilkques\OpenAPI\Tests\Stubs\Middleware\RandomMiddleware;
