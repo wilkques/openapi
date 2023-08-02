@@ -2,7 +2,6 @@
 
 namespace Wilkques\OpenAPI\Tests;
 
-use Illuminate\Config\Repository as Config;
 use Laravel\Passport\Passport;
 use PHPUnit\Framework\TestCase as PHPunitTestCase;
 use Wilkques\OpenAPI\Tests\Stubs\Middleware\RandomMiddleware;
@@ -11,7 +10,7 @@ class TestCase extends PHPunitTestCase
 {
     use CreatesApplication;
 
-    /** @var Config */
+    /** @var \Illuminate\Config\Repository */
     protected $config;
 
     /** @var \Illuminate\Foundation\Application */
@@ -23,7 +22,7 @@ class TestCase extends PHPunitTestCase
 
         $this->getPackageProviders($app);
 
-        $this->config = $app->make(Config::class);
+        $this->config = $app->make(\Illuminate\Config\Repository::class);
 
         $app->scoped(\phpDocumentor\Reflection\DocBlockFactory::class, function () {
             return \phpDocumentor\Reflection\DocBlockFactory::createInstance();
