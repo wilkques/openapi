@@ -43,14 +43,5 @@ jobs:
     # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
     # Docs: https://getcomposer.org/doc/articles/scripts.md
 
-    - name: Run test Path Parameter generator
-      run: vendor/bin/phpunit tests/Parameters/PathParameterGeneratorTest.php
-
-    - name: Run test Query Parameter generator
-      run: vendor/bin/phpunit tests/Parameters/QueryParameterGeneratorTest.php
-
-    - name: Run test Request Body Parameter generator
-      run: vendor/bin/phpunit tests/Parameters/RequestBodyGeneratorTest.php
-
-    - name: Run test generator
-      run: vendor/bin/phpunit tests/GeneratorTest.php
+    - name: Run test openapi swagger
+      run: vendor/bin/phpunit

@@ -12,6 +12,7 @@
         "php": "^7.4|^8.0",
         "phpunit/phpunit": "^8.0|^9.0",
         "laravel/passport": "^9.4",
+        "orchestra/testbench": "6.*|5.*",
         "wilkques/php-helper": "^2.0.0"
     },
     "autoload": {

@@ -3,45 +3,32 @@
 namespace Wilkques\OpenAPI\Tests;
 
 use Laravel\Passport\Passport;
-use PHPUnit\Framework\TestCase as PHPunitTestCase;
 use Wilkques\OpenAPI\Tests\Stubs\Middleware\RandomMiddleware;
+use Orchestra\Testbench\TestCase as OrchestraTestCase;
 
-class TestCase extends PHPunitTestCase
+class TestCase extends OrchestraTestCase
 {
-    use \Tests\CreatesApplication;
-
     /** @var \Illuminate\Config\Repository */
     protected $config;
 
     /** @var \Illuminate\Foundation\Application */
     protected $app;
 
-    public function registerApp()
+    protected function getPackageProviders($app)
     {
-        $app = $this->createApplication();
+        return ['Wilkques\OpenAPI\OpenAPIServiceProvider'];
+    }
 
-        $this->getPackageProviders($app);
-
+    protected function getEnvironmentSetUp($app)
+    {
         $this->config = $app->make('config');
 
         $app->scoped(\phpDocumentor\Reflection\DocBlockFactory::class, function () {
             return \phpDocumentor\Reflection\DocBlockFactory::createInstance();
         });
 
-        $this->app = $app;
-
-        $this->getEnvironmentSetUp($app);
-    }
-
-    protected function getPackageProviders()
-    {
-        return ['Wilkques\OpenAPI\OpenAPIServiceProvider'];
-    }
-
-    protected function getEnvironmentSetUp()
-    {
         /** @var \Illuminate\Routing\Router */
-        $router = $this->app->make('router');
+        $router = $app->make('router');
 
         $router->middleware(['some-middleware', 'scope:user-read'])->group(function () use ($router) {
             $router->get('/users', 'Wilkques\\OpenAPI\\Tests\\Stubs\\Controllers\\UserController@index');
@@ -68,6 +55,8 @@ class TestCase extends PHPunitTestCase
             'user-write' => 'Update user information',
         ]);
 
-        app()->scoped(\Illuminate\Routing\Router::class, fn() => $router);
+        $app->scoped(\Illuminate\Routing\Router::class, fn() => $router);
+
+        $this->app = $app;
     }
 }

@@ -33,8 +33,6 @@ class GeneratorTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-
-        $this->registerApp();
     }
 
     public function testRequiredBaseInfo()
@@ -468,12 +466,9 @@ class GeneratorTest extends TestCase
 
             $this->config->set("openapi", $openapi);
 
-            app()->scoped(\Illuminate\Config\Repository::class, fn () => $this->config);
+            $this->app->scoped(\Illuminate\Config\Repository::class, fn () => $this->config);
         }
 
-        return (new Generator(
-            $this->app->make(\Wilkques\OpenAPI\DataObjects\Routes::class),
-            $this->config,
-        ))->handle();
+        return $this->app->make(Generator::class)->handle();
     }
 }

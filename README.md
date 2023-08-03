@@ -136,7 +136,7 @@ Or custom Request
  *          }
  *      ],
  *      "requestBody": {
- *          "custom": "only", // If the value of the custom parameter is "only", then display only the custom parameters. If the value is "merge", then merge the custom parameters with the results of the FormRequest. The default value is "only".
+ *          "custom": "only", // If the value of the custom parameter is "only", then display only the custom parameters. If the value is "merge", then merge the custom parameters with the results of the FormRequest. The default value is "merge".
  *          "content": {
  *              "multipart/form-data": {
  *                  "schema": {

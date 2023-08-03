@@ -2,7 +2,6 @@
 
 namespace Wilkques\OpenAPI\DataObjects;
 
-use Illuminate\Foundation\Application;
 use Illuminate\Routing\Route as LaravelRoute;
 use Illuminate\Support\Arr;
 use Illuminate\Config\Repository as Config;

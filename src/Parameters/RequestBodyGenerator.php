@@ -195,13 +195,13 @@ class RequestBodyGenerator extends ParameterGenerates
         if ($request->has('custom')) {
             // If the value of the custom parameter is "only", then display only the custom parameters.
             // If the value is "merge", then merge the custom parameters with the results of the FormRequest.
-            // The default value is "only".
+            // The default value is "merge".
             if (!is_string($request->get('custom')) or !in_array($request->get('custom'), ['only', 'merge'])) {
                 throw new \InvalidArgumentException('The value of the custom parameter can only be "only" or "merge".');
             }
         }
 
-        if ('only' === $request->takeOffRecursive('custom', 'only')) {
+        if ('only' === $request->takeOffRecursive('custom', 'merge')) {
             return $request->toArray();
         }
 
