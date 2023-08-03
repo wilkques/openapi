@@ -242,7 +242,6 @@ class GeneratorTest extends TestCase
      */
     public function testHasPaths($docs)
     {
-        dd(array_keys($docs['paths']));
         $this->assertEquals($this->endpoints, array_keys($docs['paths']));
 
         return $docs['paths'];
