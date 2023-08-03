@@ -242,15 +242,7 @@ class GeneratorTest extends TestCase
      */
     public function testHasPaths($docs)
     {
-        $endpoints = $this->endpoints;
-
-        sort($endpoints);
-
-        $intersect = array_values(array_intersect(array_keys($docs['paths']), $this->endpoints));
-
-        sort($intersect);
-dd($intersect, $endpoints);
-        $this->assertEquals($endpoints, $intersect);
+        $this->assertEquals($this->endpoints, array_keys($docs['paths']));
 
         return $docs['paths'];
     }
