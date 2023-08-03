@@ -42,6 +42,6 @@
         "php": "^7.4|^8.0",
         "laravel/framework": "^8.0|^7.0",
         "ext-json": "*",
-        "wilkques/php-helper": "^2.0.0"
+        "wilkques/php-helper": "^3.0.0"
     }
 }
