@@ -32,16 +32,11 @@ class GeneratorTest extends TestCase
 
     public function setUp(): void
     {
-        $app = app();
-
-        if (!$app->bound(\Wilkques\OpenAPI\OpenAPIServiceProvider::class)) {
-            $app->bind(
-                \Wilkques\OpenAPI\OpenAPIServiceProvider::class,
-                fn () => $app->make(\Wilkques\OpenAPI\OpenAPIServiceProvider::class)
-            );
-        }
-
         parent::setUp();
+
+        $this->artisan('vendor:publish', [
+            '--provider' => \Wilkques\OpenAPI\OpenAPIServiceProvider::class
+        ]);
     }
 
     public function testRequiredBaseInfo()
@@ -251,7 +246,6 @@ class GeneratorTest extends TestCase
      */
     public function testHasPaths($docs)
     {
-        dd($this->endpoints, array_keys($docs['paths']));
         $this->assertEquals($this->endpoints, array_keys($docs['paths']));
 
         return $docs['paths'];
