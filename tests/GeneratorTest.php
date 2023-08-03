@@ -249,7 +249,7 @@ class GeneratorTest extends TestCase
         $intersect = array_values(array_intersect(array_keys($docs['paths']), $this->endpoints));
 
         sort($intersect);
-
+dd($intersect, $endpoints);
         $this->assertEquals($endpoints, $intersect);
 
         return $docs['paths'];
