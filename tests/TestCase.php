@@ -23,7 +23,7 @@ class TestCase extends OrchestraTestCase
     {
         $this->config = $app->make('config');
 
-        $app->scoped(\phpDocumentor\Reflection\DocBlockFactory::class, function () {
+        $app->bind(\phpDocumentor\Reflection\DocBlockFactory::class, function () {
             return \phpDocumentor\Reflection\DocBlockFactory::createInstance();
         });
 
@@ -55,7 +55,7 @@ class TestCase extends OrchestraTestCase
             'user-write' => 'Update user information',
         ]);
 
-        $app->scoped(\Illuminate\Routing\Router::class, fn() => $router);
+        $app->bind(\Illuminate\Routing\Router::class, fn() => $router);
 
         $this->app = $app;
     }

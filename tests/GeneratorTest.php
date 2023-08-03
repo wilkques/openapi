@@ -466,7 +466,7 @@ class GeneratorTest extends TestCase
 
             $this->config->set("openapi", $openapi);
 
-            $this->app->scoped(\Illuminate\Config\Repository::class, fn () => $this->config);
+            $this->app->bind(\Illuminate\Config\Repository::class, fn () => $this->config);
         }
 
         return $this->app->make(Generator::class)->handle();
