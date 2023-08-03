@@ -32,6 +32,15 @@ class GeneratorTest extends TestCase
 
     public function setUp(): void
     {
+        $app = app();
+
+        if (!$app->bound(\Wilkques\OpenAPI\OpenAPIServiceProvider::class)) {
+            $app->bind(
+                \Wilkques\OpenAPI\OpenAPIServiceProvider::class,
+                fn () => $app->make(\Wilkques\OpenAPI\OpenAPIServiceProvider::class)
+            );
+        }
+
         parent::setUp();
     }
 

@@ -16,7 +16,7 @@ class TestCase extends OrchestraTestCase
 
     protected function getPackageProviders($app)
     {
-        return ['Wilkques\OpenAPI\OpenAPIServiceProvider'];
+        return [\Wilkques\OpenAPI\OpenAPIServiceProvider::class];
     }
 
     protected function getEnvironmentSetUp($app)
@@ -55,7 +55,7 @@ class TestCase extends OrchestraTestCase
             'user-write' => 'Update user information',
         ]);
 
-        $app->bind(\Illuminate\Routing\Router::class, fn() => $router);
+        $app->bind(\Illuminate\Routing\Router::class, fn () => $router);
 
         $this->app = $app;
     }
