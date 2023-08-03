@@ -21,10 +21,6 @@ class TestCase extends OrchestraTestCase
 
     protected function getEnvironmentSetUp($app)
     {
-        $this->artisan('vendor:publish', [
-            '--provider' => \Wilkques\OpenAPI\OpenAPIServiceProvider::class
-        ]);
-
         $this->config = $app->make('config');
 
         $app->bind(\phpDocumentor\Reflection\DocBlockFactory::class, function () {
@@ -62,5 +58,9 @@ class TestCase extends OrchestraTestCase
         $app->bind(\Illuminate\Routing\Router::class, fn () => $router);
 
         $this->app = $app;
+        
+        $this->artisan('vendor:publish', [
+            '--provider' => \Wilkques\OpenAPI\OpenAPIServiceProvider::class
+        ]);
     }
 }
