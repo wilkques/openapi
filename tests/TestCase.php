@@ -8,7 +8,7 @@ use Wilkques\OpenAPI\Tests\Stubs\Middleware\RandomMiddleware;
 
 class TestCase extends PHPunitTestCase
 {
-    use CreatesApplication;
+    use \Tests\CreatesApplication;
 
     /** @var \Illuminate\Config\Repository */
     protected $config;
@@ -22,7 +22,7 @@ class TestCase extends PHPunitTestCase
 
         $this->getPackageProviders($app);
 
-        $this->config = $app->make(\Illuminate\Config\Repository::class);
+        $this->config = $app->make('config');
 
         $app->scoped(\phpDocumentor\Reflection\DocBlockFactory::class, function () {
             return \phpDocumentor\Reflection\DocBlockFactory::createInstance();
