@@ -21,6 +21,10 @@ class TestCase extends OrchestraTestCase
 
     protected function getEnvironmentSetUp($app)
     {
+        $this->artisan('vendor:publish', [
+            '--provider' => \Wilkques\OpenAPI\OpenAPIServiceProvider::class
+        ]);
+
         $this->config = $app->make('config');
 
         $app->bind(\phpDocumentor\Reflection\DocBlockFactory::class, function () {
@@ -29,7 +33,7 @@ class TestCase extends OrchestraTestCase
 
         /** @var \Illuminate\Routing\Router */
         $router = $app->make('router');
-dd($router->getRoutes()->getRoutes());
+        dd($router->getRoutes());
         $router->middleware(['some-middleware', 'scope:user-read'])->group(function () use ($router) {
             $router->get('/users', 'Wilkques\\OpenAPI\\Tests\\Stubs\\Controllers\\UserController@index');
             $router->get('/users/{id}', 'Wilkques\\OpenAPI\\Tests\\Stubs\\Controllers\\UserController@show');

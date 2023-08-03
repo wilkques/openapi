@@ -32,10 +32,6 @@ class GeneratorTest extends TestCase
 
     public function setUp(): void
     {
-        $this->artisan('vendor:publish', [
-            '--provider' => \Wilkques\OpenAPI\OpenAPIServiceProvider::class
-        ]);
-
         parent::setUp();
     }
 
