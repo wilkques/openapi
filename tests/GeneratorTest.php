@@ -6,9 +6,6 @@ use Wilkques\OpenAPI\Generator;
 
 class GeneratorTest extends TestCase
 {
-    /** @var Generator */
-    protected $generator;
-
     protected $endpoints = [
         '/users',
         '/users/{id}',
@@ -406,27 +403,26 @@ class GeneratorTest extends TestCase
     }
 
     /**
-     * @param string|null $routeFilter
-     * @param array $expectedRoutes
+     * @param string|null $filter
+     * @param array $except
      *
      * @dataProvider filtersRoutesProvider
      */
-    public function testFiltersRoutes($routeFilter, $expectedRoutes)
+    public function testFiltersRoutes($filter, $except)
     {
-        $this->generator = new Generator(
-            app(\Wilkques\OpenAPI\DataObjects\Routes::class),
-            $this->config,
+        // builder router
+        /** @var \Wilkques\OpenAPI\DataObjects\Routes */
+        $routes = app(\Wilkques\OpenAPI\DataObjects\Routes::class);
+
+        // Generate openapi
+        $generator = new Generator(
+            $routes->setFilterRoute($filter),
+            $this->config
         );
 
-        $docs = $this->generator->handle();
+        $docs = $generator->handle();
 
-        sort($expectedRoutes);
-
-        $intersect = array_values(array_intersect(array_keys($docs['paths']), $expectedRoutes));
-
-        sort($intersect);
-
-        $this->assertEquals($expectedRoutes, $intersect);
+        $this->assertEquals($except, array_keys($docs['paths']));
     }
 
     /**
