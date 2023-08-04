@@ -29,7 +29,7 @@ class TestCase extends OrchestraTestCase
 
         /** @var \Illuminate\Routing\Router */
         $router = $app->make('router');
-        dd($router->getRoutes());
+
         $router->middleware(['some-middleware', 'scope:user-read'])->group(function () use ($router) {
             $router->get('/users', 'Wilkques\\OpenAPI\\Tests\\Stubs\\Controllers\\UserController@index');
             $router->get('/users/{id}', 'Wilkques\\OpenAPI\\Tests\\Stubs\\Controllers\\UserController@show');
@@ -53,14 +53,6 @@ class TestCase extends OrchestraTestCase
         Passport::tokensCan([
             'user-read' => 'Read user information such as email, name and phone number',
             'user-write' => 'Update user information',
-        ]);
-
-        $app->bind(\Illuminate\Routing\Router::class, fn () => $router);
-
-        $this->app = $app;
-        
-        $this->artisan('vendor:publish', [
-            '--provider' => \Wilkques\OpenAPI\OpenAPIServiceProvider::class
         ]);
     }
 }

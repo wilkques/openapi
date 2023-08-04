@@ -104,7 +104,7 @@ class Generator
     protected function generateRoutes(Collection $item, $index)
     {
         // servers tag
-        if ($index == 'servers' && $item->isNotEmpty()) {
+        if ($index === 'servers' && $item->isNotEmpty()) {
             return [
                 'servers' => $item->toArray()
             ];
