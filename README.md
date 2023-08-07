@@ -2,7 +2,7 @@
 
 Laravel OAS3 scans your Laravel project's endpoints and auto generates a OAS3 documentation for you.
 
-[![PHP Composer](https://github.com/wilkques/openapi/actions/workflows/github-ci.yml/badge.svg)](https://github.com/wilkques/openapi/actions/workflows/github-ci.yml)
+[![TESTS](https://github.com/wilkques/openapi/actions/workflows/github-ci.yml/badge.svg)](https://github.com/wilkques/openapi/actions/workflows/github-ci.yml)
 [![Latest Stable Version](https://poser.pugx.org/wilkques/openapi/v/stable)](https://packagist.org/packages/wilkques/openapi)
 [![License](https://poser.pugx.org/wilkques/openapi/license)](https://packagist.org/packages/wilkques/openapi)
 
