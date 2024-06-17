@@ -9,6 +9,8 @@ class GeneratorTest extends TestCase
     protected $endpoints = [
         '/users',
         '/users/{id}',
+        '/users/json/{id}',
+        '/users/yaml/{id}',
         '/users/details',
         '/users/ping',
         '/api',
@@ -26,11 +28,6 @@ class GeneratorTest extends TestCase
         '/api/doc/json',
         '/api/doc/yaml',
     ];
-
-    public function setUp(): void
-    {
-        parent::setUp();
-    }
 
     public function testRequiredBaseInfo()
     {
@@ -50,7 +47,7 @@ class GeneratorTest extends TestCase
     public function testRequiredBaseInfoData()
     {
         $docs = $this->getDocsWithNewConfig([
-            'baseic' => [
+            'basic' => [
                 'openapi' => '3.0.0',
                 'info' => [
                     'title' => config('app.name'),
@@ -291,6 +288,110 @@ class GeneratorTest extends TestCase
         $this->assertEquals('', $paths['/users/details']['get']['summary']);
         $this->assertEquals(true, $paths['/users/details']['get']['deprecated']);
         $this->assertEquals('', $paths['/users/details']['get']['description']);
+
+        $this->assertEquals('test json controller', $paths['/users/json/{id}']['put']['summary']);
+
+        $this->assertEquals([
+            "description" => "OK",
+            "content" => [
+                "application/json" => [
+                    "schema" => [
+                        '$ref' => "#/components/schemas/defaultSuccess"
+                    ],
+                ],
+            ],
+        ], $paths['/users/json/{id}']['put']['responses'][200]);
+        $this->assertEquals([
+            "description" => "OK",
+            "content" => [
+                "application/json" => [
+                    "schema" => [
+                        '$ref' => "#/components/schemas/defaultError"
+                    ],
+                ],
+            ],
+        ], $paths['/users/json/{id}']['put']['responses'][400]);
+        $this->assertEquals([
+            "description" => "OK",
+            "content" => [
+                "application/json" => [
+                    "schema" => [
+                        '$ref' => "#/components/schemas/defaultError"
+                    ],
+                ],
+            ],
+        ], $paths['/users/json/{id}']['put']['responses'][500]);
+        $this->assertEquals([
+            "in" => "path",
+            "name" => "id",
+            "required" => true,
+            "description" => "",
+            "schema" => [
+                "type" => "string",
+            ],
+        ], $paths['/users/json/{id}']['put']['parameters'][0]);
+        $this->assertEquals([
+            "content" => [
+                "application/json" => [
+                    "schema" => [
+                        "type" => "object",
+                        "properties" => [],
+                    ],
+                ],
+            ],
+        ], $paths['/users/json/{id}']['put']['requestBody']);
+
+        $this->assertEquals('test yaml controller', $paths['/users/yaml/{id}']['put']['summary']);
+
+        $this->assertEquals([
+            "description" => "OK",
+            "content" => [
+                "application/json" => [
+                    "schema" => [
+                        '$ref' => "#/components/schemas/defaultSuccess"
+                    ],
+                ],
+            ],
+        ], $paths['/users/yaml/{id}']['put']['responses'][200]);
+        $this->assertEquals([
+            "description" => "OK",
+            "content" => [
+                "application/json" => [
+                    "schema" => [
+                        '$ref' => "#/components/schemas/defaultError"
+                    ],
+                ],
+            ],
+        ], $paths['/users/yaml/{id}']['put']['responses'][400]);
+        $this->assertEquals([
+            "description" => "OK",
+            "content" => [
+                "application/json" => [
+                    "schema" => [
+                        '$ref' => "#/components/schemas/defaultError"
+                    ],
+                ],
+            ],
+        ], $paths['/users/yaml/{id}']['put']['responses'][500]);
+        $this->assertEquals([
+            "in" => "path",
+            "name" => "id",
+            "required" => true,
+            "description" => "",
+            "schema" => [
+                "type" => "string",
+            ],
+        ], $paths['/users/yaml/{id}']['put']['parameters'][0]);
+        $this->assertEquals([
+            "content" => [
+                "application/json" => [
+                    "schema" => [
+                        "type" => "object",
+                        "properties" => [],
+                    ],
+                ],
+            ],
+        ], $paths['/users/yaml/{id}']['put']['requestBody']);
     }
 
     /**
@@ -350,7 +451,7 @@ class GeneratorTest extends TestCase
     public function testOptionalData()
     {
         $docs = $this->getDocsWithNewConfig([
-            'baseic' => [
+            'basic' => [
                 "servers" => [
                     [
                         "url" => env('APP_DOMAIN', '') ? "{schema}://" . env('APP_DOMAIN') : '/',

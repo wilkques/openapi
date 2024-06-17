@@ -12,7 +12,7 @@ return [
     |
     */
 
-    'baseic' => [
+    'basic' => [
 
         'openapi' => '3.0.3',
 

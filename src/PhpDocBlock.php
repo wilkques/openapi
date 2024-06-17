@@ -65,6 +65,11 @@ class PhpDocBlock
         return \yaml_parse($yamlString);
     }
 
+    /**
+     * @param string $jsonString
+     * 
+     * @return string
+     */
     private function errorJsonString($jsonString)
     {
         $jsonString = trim(preg_replace('/\s+/', ' ', $jsonString));

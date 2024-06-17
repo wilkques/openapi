@@ -32,9 +32,11 @@ class TestCase extends OrchestraTestCase
 
         $router->middleware(['some-middleware', 'scope:user-read'])->group(function () use ($router) {
             $router->get('/users', 'Wilkques\\OpenAPI\\Tests\\Stubs\\Controllers\\UserController@index');
-            $router->get('/users/{id}', 'Wilkques\\OpenAPI\\Tests\\Stubs\\Controllers\\UserController@show');
             $router->post('/users', 'Wilkques\\OpenAPI\\Tests\\Stubs\\Controllers\\UserController@store')
                 ->middleware('scopes:user-write,user-read');
+            $router->get('/users/{id}', 'Wilkques\\OpenAPI\\Tests\\Stubs\\Controllers\\UserController@show');
+            $router->put('/users/json/{id}', 'Wilkques\\OpenAPI\\Tests\\Stubs\\Controllers\\UserController@json');
+            $router->put('/users/yaml/{id}', 'Wilkques\\OpenAPI\\Tests\\Stubs\\Controllers\\UserController@yaml');
             $router->get('/users/details', 'Wilkques\\OpenAPI\\Tests\\Stubs\\Controllers\\UserController@details');
             $router->get('/users/ping', function () {
                 return 'pong';

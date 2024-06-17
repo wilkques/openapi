@@ -86,13 +86,13 @@ class Generator
             'paths' => []
         ];
 
-        // config openapi.baseic
-        $baseic = $this->getConfig('baseic');
+        // config openapi.basic
+        $basic = $this->getConfig('basic');
 
         // get components
         $components = $this->components();
 
-        return array_merge_recursive($baseic, compact('components'), $generate);
+        return array_merge_recursive($basic, compact('components'), $generate);
     }
 
     /**
