@@ -10,10 +10,10 @@ class PathParameterGenerator implements ParameterGenerator
     /** @var string */
     protected $uri;
 
-    /** @var Collection */
+    /** @var Collection|null */
     protected $pathsDoc;
 
-    public function __construct(string $uri, Collection $pathsDoc)
+    public function __construct(string $uri, Collection $pathsDoc = null)
     {
         $this->setUri($uri)->setPathsDoc($pathsDoc);
     }
@@ -39,11 +39,11 @@ class PathParameterGenerator implements ParameterGenerator
     }
 
     /**
-     * @param Collection $pathsDoc
+     * @param Collection|null $pathsDoc
      * 
      * @return static
      */
-    public function setPathsDoc(Collection $pathsDoc)
+    public function setPathsDoc(Collection $pathsDoc = null)
     {
         $this->pathsDoc = $pathsDoc;
 
@@ -51,7 +51,7 @@ class PathParameterGenerator implements ParameterGenerator
     }
 
     /**
-     * @return Collection
+     * @return Collection|null
      */
     public function getPathsDoc()
     {
@@ -79,7 +79,7 @@ class PathParameterGenerator implements ParameterGenerator
                 ]
             ];
 
-            if ($this->getPathsDoc()->has($name)) {
+            if ($this->getPathsDoc() && $this->getPathsDoc()->has($name)) {
                 $parameter = array_replace_recursive($parameter, $this->getPathsDoc()->get($name)->toArray());
             }
 
