@@ -47,8 +47,6 @@ class TestCase extends OrchestraTestCase
             ->middleware(RandomMiddleware::class);
         $router->put('/api/store', 'Wilkques\\OpenAPI\\Tests\\Stubs\\Controllers\\ApiController@store');
 
-        Passport::ignoreRoutes();
-
         $router->aliasMiddleware('scopes', \Laravel\Passport\Http\Middleware\CheckScopes::class);
         $router->aliasMiddleware('scope', \Laravel\Passport\Http\Middleware\CheckForAnyScope::class);
 
