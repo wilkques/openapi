@@ -16,7 +16,10 @@ class TestCase extends OrchestraTestCase
 
     protected function getPackageProviders($app)
     {
-        return [\Wilkques\OpenAPI\OpenAPIServiceProvider::class];
+        return [
+            \Wilkques\OpenAPI\OpenAPIServiceProvider::class,
+            \Laravel\Passport\PassportServiceProvider::class,
+        ];
     }
 
     protected function getEnvironmentSetUp($app)
