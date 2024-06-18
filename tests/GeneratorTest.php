@@ -2,11 +2,13 @@
 
 namespace Wilkques\OpenAPI\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Depends;
 use Wilkques\OpenAPI\Generator;
 
 class GeneratorTest extends TestCase
 {
-    protected $endpoints = [
+    const ENDPOINTS = [
         '/users',
         '/users/{id}',
         '/users/json/{id}',
@@ -15,18 +17,18 @@ class GeneratorTest extends TestCase
         '/users/ping',
         '/api',
         '/api/store',
-        '/oauth/authorize',
+        '/api/doc/json',
+        '/api/doc/yaml',
         '/oauth/token',
+        '/oauth/authorize',
+        '/oauth/token/refresh',
         '/oauth/tokens',
         '/oauth/tokens/{token_id}',
-        '/oauth/token/refresh',
         '/oauth/clients',
         '/oauth/clients/{client_id}',
         '/oauth/scopes',
         '/oauth/personal-access-tokens',
         '/oauth/personal-access-tokens/{token_id}',
-        '/api/doc/json',
-        '/api/doc/yaml',
     ];
 
     public function testRequiredBaseInfo()
@@ -231,19 +233,15 @@ class GeneratorTest extends TestCase
         $this->assertArrayHasKey('tokenUrl', $securityDefinition['flows']['application']);
     }
 
-    /**
-     * @depends testRequiredBaseInfo
-     */
+    #[Depends('testRequiredBaseInfo')]
     public function testHasPaths($docs)
     {
-        $this->assertEquals($this->endpoints, array_keys($docs['paths']));
+        $this->assertEquals(static::ENDPOINTS, array_keys($docs['paths']));
 
         return $docs['paths'];
     }
 
-    /**
-     * @depends testHasPaths
-     */
+    #[Depends('testHasPaths')]
     public function testPathMethods($paths)
     {
         $this->assertArrayHasKey('get', $paths['/users']);
@@ -255,9 +253,7 @@ class GeneratorTest extends TestCase
         $this->assertArrayHasKey('get', $paths['/users/details']);
     }
 
-    /**
-     * @depends testHasPaths
-     */
+    #[Depends('testHasPaths')]
     public function testRouteData($paths)
     {
         $expectedPostDescription = <<<TEXT
@@ -396,9 +392,7 @@ class GeneratorTest extends TestCase
         ], $paths['/users/yaml/{id}']['put']['requestBody']);
     }
 
-    /**
-     * @depends testHasPaths
-     */
+    #[Depends('testHasPaths')]
     public function testRouteScopes()
     {
         $docs = $this->getDocsWithNewConfig([
@@ -508,9 +502,8 @@ class GeneratorTest extends TestCase
     /**
      * @param string|null $filter
      * @param array $except
-     *
-     * @dataProvider filtersRoutesProvider
      */
+    #[DataProvider('filtersRoutesProvider')]
     public function testFiltersRoutes($filter, $except)
     {
         // builder router
@@ -531,10 +524,10 @@ class GeneratorTest extends TestCase
     /**
      * @return array
      */
-    public function filtersRoutesProvider()
+    public static function filtersRoutesProvider()
     {
         return [
-            'No Filter' => [null, $this->endpoints],
+            'No Filter' => [null, static::ENDPOINTS],
             '/api Filter' => ['/api', [
                 '/api',
                 '/api/store',

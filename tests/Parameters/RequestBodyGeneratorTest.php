@@ -3,6 +3,7 @@
 namespace Wilkques\OpenAPI\Tests\Parameters;
 
 use Illuminate\Validation\Rule;
+use PHPUnit\Framework\Attributes\Depends;
 use Wilkques\OpenAPI\Parameters\RequestBodyGenerator;
 use Wilkques\OpenAPI\Tests\Stubs\Rules\Uppercase as UppercaseRule;
 use Wilkques\OpenAPI\Tests\TestCase;
@@ -45,9 +46,7 @@ class RequestBodyGeneratorTest extends TestCase
         return $requestBody;
     }
 
-    /**
-     * @depends testRequiredParameters
-     */
+    #[Depends('testRequiredParameters')]
     public function testDataTypes($requestBody)
     {
         $this->assertEquals([
