@@ -2,7 +2,7 @@ name: TESTS
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "laravel8" ]
 
 permissions:
   contents: read
