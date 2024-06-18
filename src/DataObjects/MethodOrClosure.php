@@ -156,7 +156,7 @@ class MethodOrClosure extends DataObjects
     /**
      * building validation request or url
      * 
-     * @return FormRequest
+     * @return Collection|[]
      */
     protected function rules()
     {

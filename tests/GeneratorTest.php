@@ -325,10 +325,11 @@ class GeneratorTest extends TestCase
             "in" => "path",
             "name" => "id",
             "required" => true,
-            "description" => "",
+            "description" => "id",
             "schema" => [
                 "type" => "string",
             ],
+            'example' => '123456789',
         ], $paths['/users/json/{id}']['put']['parameters'][0]);
         $this->assertEquals([
             "content" => [
@@ -377,10 +378,11 @@ class GeneratorTest extends TestCase
             "in" => "path",
             "name" => "id",
             "required" => true,
-            "description" => "",
+            "description" => "id",
             "schema" => [
                 "type" => "string",
             ],
+            'example' => '123456789',
         ], $paths['/users/yaml/{id}']['put']['parameters'][0]);
         $this->assertEquals([
             "content" => [

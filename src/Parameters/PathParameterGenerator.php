@@ -2,6 +2,7 @@
 
 namespace Wilkques\OpenAPI\Parameters;
 
+use Wilkques\OpenAPI\Helpers\Collection;
 use Wilkques\OpenAPI\Parameters\Contracts\ParameterGenerator;
 
 class PathParameterGenerator implements ParameterGenerator
@@ -9,10 +10,10 @@ class PathParameterGenerator implements ParameterGenerator
     /** @var string */
     protected $uri;
 
-    /** @var array */
+    /** @var Collection */
     protected $pathsDoc;
 
-    public function __construct(string $uri, $pathsDoc = [])
+    public function __construct(string $uri, Collection $pathsDoc)
     {
         $this->setUri($uri)->setPathsDoc($pathsDoc);
     }
@@ -38,11 +39,11 @@ class PathParameterGenerator implements ParameterGenerator
     }
 
     /**
-     * @param array $pathsDoc
+     * @param Collection $pathsDoc
      * 
      * @return static
      */
-    public function setPathsDoc($pathsDoc)
+    public function setPathsDoc(Collection $pathsDoc)
     {
         $this->pathsDoc = $pathsDoc;
 
@@ -50,7 +51,7 @@ class PathParameterGenerator implements ParameterGenerator
     }
 
     /**
-     * @return array
+     * @return Collection
      */
     public function getPathsDoc()
     {
@@ -78,8 +79,8 @@ class PathParameterGenerator implements ParameterGenerator
                 ]
             ];
 
-            if (array_key_exists($name, $this->pathsDoc)) {
-                $parameter = array_replace_recursive($parameter, array_get($this->getPathsDoc(), $name));
+            if ($this->getPathsDoc()->has($name)) {
+                $parameter = array_replace_recursive($parameter, $this->getPathsDoc()->get($name)->toArray());
             }
 
             $parameters[] = $parameter;

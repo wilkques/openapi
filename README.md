@@ -111,6 +111,54 @@ class TestController extends Controller
      * })
      */
     public function update(UserUpdateRequest $request)
+
+    // or
+
+    /**
+     * test yaml controller
+     * 
+     * @Path(
+     *      id:
+     *          description: "id"
+     *          example: 123456789
+     * 
+     * )
+     * @Request(
+     *      summary: "test get /api/test index"
+     *      description: "Test route descriptioncd"
+     *      tags:
+     *      - "User"
+     *      security: 
+     *      - bearerAuth: []
+     * )
+     * @Response(
+     *     code: 302
+     * )
+     * @Response(
+     *     code: 400
+     * )
+     * @Response(
+     *     code: 500
+     * )
+     * @Response(
+     *      code: 200
+     *      body:
+     *          data:
+     *              type: "array"
+     *              items:
+     *                  type: "object"
+     *                  properties:
+     *                      id:
+     *                          type: "integer"
+     *                          description: "file id"
+     *                          example: 1
+     *                      name: 
+     *                          type: "string"
+     *                          description: "file name"
+     *                          example: "name"
+     * )
+     */
+    public function yaml()
 ```
 
 Or custom Request

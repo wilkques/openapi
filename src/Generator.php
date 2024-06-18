@@ -117,13 +117,17 @@ class Generator
         $method = $item->get('method');
 
         // request tag
-        $request = $item->get('request', $this->collection());
+        /** @var \Wilkques\OpenAPI\Helpers\Collection */
+        $request = $item->getToDefault('request', $this->collection());
 
         // response tag
         $response = $this->responses($item->get('response', []));
 
+        // path tag
+        $path = $item->getToDefault('path', $this->collection());
+
         // uri path
-        $parameters = (new PathParameterGenerator($item->get('originUri'), $item->get('path', [])))->getParameters();
+        $parameters = (new PathParameterGenerator($item->get('originUri'), $path))->getParameters();
 
         // request path
         if ($request->has('parameters')) {
